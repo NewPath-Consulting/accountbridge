@@ -10,6 +10,7 @@ export const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,6 +22,7 @@ export const LoginPage = () => {
     }
     catch(e){
       console.log(e);
+      setError(e.response.data.message)
     }
     finally {
       setLoading(false)
@@ -42,7 +44,9 @@ export const LoginPage = () => {
 
           <div className={'auth-container '}>
             <h2 className="fw-medium mb-4 auth-title">Welcome Back</h2>
-
+            {error && <div style={{fontSize: '13px'}} className="alert alert-danger" role="alert">
+              <i style={{color: "#58151c"}} className={'bi bi-exclamation-circle'}></i> {error}
+            </div>}
             <form onSubmit={handleSubmit} className={'d-flex flex-column gap-3'}>
               <div className="align">
                 <label htmlFor="email" className="form-label">
@@ -109,7 +113,7 @@ export const LoginPage = () => {
                 Continue with Google
               </button>
 
-              <div className="text-center text-secondary small d-flex gap-1">
+              <div className="text-center text-secondary small d-flex gap-1 pb-3">
                 don't have an account?{' '}
                 <Link to={'/register'} className="text-primary text-decoration-none">
                   Sign up
