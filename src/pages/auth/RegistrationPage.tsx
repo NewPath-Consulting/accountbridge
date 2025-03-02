@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import './Auth.css';
 import {Link} from "react-router-dom"; // For any custom styles
 
-export const LoginPage = () => {
+export const RegistrationPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +28,7 @@ export const LoginPage = () => {
           </div>
 
           <div className={'auth-container '}>
-            <h2 className="fw-medium mb-4 auth-title">Welcome Back</h2>
+            <h2 className="fw-medium mb-4 auth-title">Create an Account</h2>
 
             <form onSubmit={handleSubmit} className={'d-flex flex-column gap-3'}>
               <div className="align">
@@ -39,6 +40,20 @@ export const LoginPage = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="form-control"
+                  required
+                />
+              </div>
+
+              <div className="align">
+                <label htmlFor="name" className="form-label">
+                  Full Name
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   className="form-control"
                   required
                 />
@@ -67,9 +82,10 @@ export const LoginPage = () => {
                 </div>
               </div>
 
-              <div className="d-flex justify-content-end">
+              <div className="d-flex align-items-center gap-2">
+                <input type={'checkbox'} className={'form-check-input m-0'}/>
                 <div className="text-secondary text-decoration-none small">
-                  Forgot Password ?
+                  I agree to the Terms & Conditions
                 </div>
               </div>
 
@@ -77,7 +93,7 @@ export const LoginPage = () => {
                 type="submit"
                 className="btn btn-success fw-bold"
               >
-                Sign In
+                Create Account
               </button>
 
               <div className="position-relative ">
@@ -96,9 +112,9 @@ export const LoginPage = () => {
               </button>
 
               <div className="text-center text-secondary small d-flex gap-1">
-                don't have an account?{' '}
-                <Link to={'/register'} className="text-primary text-decoration-none">
-                  Sign up
+                already have an account?{' '}
+                <Link to={'/login'} className="text-primary text-decoration-none">
+                  Sign in
                 </Link>
               </div>
             </form>
