@@ -21,6 +21,8 @@ import {ScrollToTop} from "./components/scroll-to-top/ScrollToTop.tsx";
 import {RunScenariosPage} from "./pages/run-scenarios-page/RunScenariosPage.tsx";
 import {LoginPage} from "./pages/auth/LoginPage.tsx";
 import {RegistrationPage} from "./pages/auth/RegistrationPage.tsx";
+import {AuthContext, AuthProvider} from "./contexts/AuthContext.tsx";
+import {ProtectedRoute} from "./components/protected-onboarding-route/ProtectedRoute.tsx";
 
 //26aba993-f746-44bf-9378-e71a2ffae2e6
 // teamId: 740188, folderId = 220109
@@ -31,7 +33,8 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
-      <Routes>
+      <AuthProvider>
+        <Routes>
         {/* Standalone Login & Register Pages */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegistrationPage />} />
@@ -39,6 +42,7 @@ function App() {
         <Route
           path="/*"
           element={
+          <ProtectedRoute>
             <OnBoardingProvider>
               <div className="app-container">
                 <div className="navbar">
@@ -67,10 +71,13 @@ function App() {
                 </div>
               </div>
             </OnBoardingProvider>
+          </ProtectedRoute>
           }
         />
       </Routes>
+      </AuthProvider>
     </Router>
+
 
   );
 }
