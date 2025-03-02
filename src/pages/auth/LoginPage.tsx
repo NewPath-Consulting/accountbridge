@@ -1,16 +1,30 @@
 import React, { useState } from 'react';
 import './Auth.css';
-import {Link} from "react-router-dom"; // For any custom styles
+import {Link, useNavigate} from "react-router-dom";
+import {useAuth} from "../../hooks/useAuth.tsx"; // For any custom styles
 
 export const LoginPage = () => {
+  const { login } = useAuth()
   const [email, setEmail] = useState('');
+  const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log('Login attempt with:', { email, password });
+    setLoading(true)
+
+    try{
+      await login(email, password);
+      navigate('/')
+    }
+    catch(e){
+      console.log(e);
+    }
+    finally {
+      setLoading(false)
+    }
   };
 
   return (

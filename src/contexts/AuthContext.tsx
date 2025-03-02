@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 interface User {
   id: string;
   email: string;
-  name?: string;
   company?: string;
 }
 
@@ -13,7 +12,7 @@ interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string, company: string) => Promise<void>;
+  register: (email: string, password: string, company: string) => Promise<void>;
   logout: () => void;
   resetPassword: (email: string) => Promise<void>;
 }
@@ -62,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, password: string, name: string, company: string) => {
+  const register = async (email: string, password: string, company: string) => {
     setLoading(true);
     try {
       // Replace with actual API call to your backend
@@ -71,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, name, company }),
+        body: JSON.stringify({ email, password, company }),
       });
 
       if (!response.ok) {
