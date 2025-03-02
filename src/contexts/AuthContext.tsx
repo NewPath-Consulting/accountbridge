@@ -1,8 +1,9 @@
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {userLogin, userRegister} from "../services/api/users-api/auth.ts";
 
-interface User {
+export interface User {
   id: string;
   email: string;
   company?: string;
@@ -37,19 +38,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       // Replace with actual API call to your backend
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await userLogin(email, password);
 
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-
-      const userData = await response.json();
+      const userData = response.data;
       setCurrentUser(userData.user);
       localStorage.setItem('accountbridge_user', JSON.stringify(userData.user));
       localStorage.setItem('accountbridge_token', userData.token);
@@ -65,19 +56,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       // Replace with actual API call to your backend
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, company }),
-      });
+      const response = await userRegister(email, password, company)
 
-      if (!response.ok) {
-        throw new Error('Registration failed');
-      }
-
-      const userData = await response.json();
+      const userData = response.data;
       setCurrentUser(userData.user);
       localStorage.setItem('accountbridge_user', JSON.stringify(userData.user));
       localStorage.setItem('accountbridge_token', userData.token);
