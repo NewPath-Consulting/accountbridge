@@ -8,9 +8,9 @@ export const ProtectedRoute = ({children}) => {
     return <div>loading ...</div>
   }
 
-  // if(!currentUser){
-  //   return <Navigate to={'/login'}/>
-  // }
+  if(!currentUser){
+    return <Navigate to={'/login'}/>
+  }
 
   return <>{children}</>
 }

@@ -2,6 +2,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {userLogin, userRegister} from "../services/api/users-api/auth.ts";
+import {jwtDecode} from "jwt-decode";
 
 export interface User {
   id: string;
@@ -28,8 +29,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Check if user is logged in (from localStorage or session cookie)
     const storedUser = localStorage.getItem('accountbridge_user');
-    if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
+    const storedToken = localStorage.getItem('accountbridge_token');
+
+    if (storedUser && storedToken) {
+      if(!isTokenExpired(storedToken)){
+        logout()
+      }
+      else{
+        setCurrentUser(JSON.parse(storedUser));
+      }
     }
     setLoading(false);
   }, []);
@@ -94,6 +102,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Password reset error:', error);
       throw error;
+    }
+  };
+
+  const isTokenExpired = (token: string): boolean => {
+    try {
+      const decoded: any = jwtDecode(token);
+      console.log(decoded.exp*1000 - Date.now() )
+      return decoded.exp * 1000 < Date.now(); // Convert `exp` to milliseconds
+    } catch (error) {
+      return true; // Treat as expired if token is invalid
     }
   };
 
