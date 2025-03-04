@@ -18,6 +18,10 @@ export const SchedulingComponent = ({ title, schedulingData, dispatch }: Schedul
   const handleScheduledChange = (e) => {
     const { name, value } = e.target
 
+    if(name == 'timePeriod'){
+      schedulingData.scheduledSchedule.numOfTimePeriods = 1
+    }
+
     dispatch({ type: "UPDATE_SCHEDULED_SCHEDULE", payload: { [name]: value } });
   }
 
@@ -55,7 +59,7 @@ export const SchedulingComponent = ({ title, schedulingData, dispatch }: Schedul
     else if(schedulingData.jobType == 'Scheduled'){
       return (
         <>
-          <div className="row g-3 align-items-center">
+          <div className="row">
             <div className="col-md-6">
               <label htmlFor={`${title.toLowerCase()}-time-periods-input`} className="form-label">Time Period for each Run</label>
               <select onChange={handleScheduledChange} id={`${title.toLowerCase()}-time-periods-input`} name={'timePeriod'} className={'form-select'} value={schedulingData.scheduledSchedule.timePeriod}>
@@ -65,32 +69,52 @@ export const SchedulingComponent = ({ title, schedulingData, dispatch }: Schedul
                 <option value={"Monthly"}>Monthly</option>
               </select>
             </div>
-
-            {schedulingData.scheduledSchedule.timePeriod == 'Weekly' ? <div className="col-md-6">
-              <label htmlFor={`${title.toLowerCase()}-weekly-input`} className="form-label">Day of Week to start run</label>
-              <select onChange={handleScheduledChange} value={schedulingData.scheduledSchedule.dayOfWeek} name={'dayOfWeek'} id={`${title.toLowerCase()}-weekly-input`} className={'form-select'}>
-                <option value={""}>Choose day of the week ...</option>
-                {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day, index) =>
-                  <option key={index} value={day}>{day}</option>)
-                }
-              </select>
-            </div> :
+          </div>
+          <div className="row g-3 align-items-center">
+            {schedulingData.scheduledSchedule.timePeriod == 'Weekly' ? <><div className="col-md-6">
+                <label htmlFor={`${title.toLowerCase()}-weekly-input`} className="form-label">Day of Week to start run</label>
+                <select onChange={handleScheduledChange} value={schedulingData.scheduledSchedule.dayOfWeek} name={'dayOfWeek'} id={`${title.toLowerCase()}-weekly-input`} className={'form-select'}>
+                  <option value={""}>Choose day of the week ...</option>
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, index) =>
+                    <option key={index} value={day}>{day}</option>)
+                  }
+                </select>
+              </div>
+              <div className="col-md-6 input-group-sm">
+                <label htmlFor={`${title.toLowerCase()}-start-time-input`} className="form-label">Start time for run</label>
+                <input onChange={handleScheduledChange} value={schedulingData.scheduledSchedule.startTime} name={'startTime'} id={`${title.toLowerCase()}-start-time-input`} type="time" className="form-control" max={31} placeholder="" aria-label="Username" aria-describedby="basic-addon1" />
+              </div></>:
               schedulingData.scheduledSchedule.timePeriod == 'Monthly' ?
-                <div className=" col-md-6 input-group-sm">
+                <><div className=" col-md-4 input-group-sm">
                   <label htmlFor={`${title.toLowerCase()}-monthly-input`} className="form-label">Day of Month to start run</label>
-                  <input onChange={handleScheduledChange} value={schedulingData.scheduledSchedule.dayOfMonth} name={'dayOfMonth'} id={`${title.toLowerCase()}-monthly-input`} type="number" className="form-control" max={31} placeholder="" aria-label="Username" aria-describedby="basic-addon1" />
-                </div> :
-                <div className=" col-md-6 m-0"></div>
+                  <select onChange={handleScheduledChange} value={schedulingData.scheduledSchedule.dayOfMonth} name={'dayOfMonth'} id={`${title.toLowerCase()}-monthly-input`} className={'form-select'}>
+                    <option value={""}>Choose day of the month ...</option>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map((number) => (
+                      <option key={number} value={number}>{number}</option>
+                    ))}
+                  </select>
+                </div>
+                  <div className=" col-md-4 input-group-sm">
+                    <label htmlFor={`${title.toLowerCase()}-num-periods-input `} className="form-label"># of Time Periods</label>
+                    <select onChange={handleScheduledChange} value={schedulingData.scheduledSchedule.numOfTimePeriods} name={'numOfTimePeriods'} id={`${title.toLowerCase()}-num-periods-input`} className={'form-select'}>
+                      <option value={""}>Choose once or twice ...</option>
+                      {Array.from({ length: 2 }, (_, i) => i + 1).map((number) => (
+                        <option key={number} value={number}>{number}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-md-4 input-group-sm">
+                    <label htmlFor={`${title.toLowerCase()}-start-time-input`} className="form-label">Start time for run</label>
+                    <input onChange={handleScheduledChange} value={schedulingData.scheduledSchedule.startTime} name={'startTime'} id={`${title.toLowerCase()}-start-time-input`} type="time" className="form-control" max={31} placeholder="" aria-label="Username" aria-describedby="basic-addon1" />
+                  </div>
+                </> :
+                schedulingData.scheduledSchedule.timePeriod == 'Daily' ?
+                  <div className="col-md-6 input-group-sm">
+                    <label htmlFor={`${title.toLowerCase()}-start-time-input`} className="form-label">Start time for run</label>
+                    <input onChange={handleScheduledChange} value={schedulingData.scheduledSchedule.startTime} name={'startTime'} id={`${title.toLowerCase()}-start-time-input`} type="time" className="form-control" max={31} placeholder="" aria-label="Username" aria-describedby="basic-addon1" />
+                  </div> :
+                  <div className=" col-md-6 m-0"></div>
             }
-
-            <div className=" col-md-6 input-group-sm">
-              <label htmlFor={`${title.toLowerCase()}-num-periods-input `} className="form-label"># of Time Periods</label>
-              <input onChange={handleScheduledChange} value={schedulingData.scheduledSchedule.numOfTimePeriods} name={'numOfTimePeriods'} id={`${title.toLowerCase()}-num-periods-input`} type="number" className="form-control" placeholder="" aria-label="Username" aria-describedby="basic-addon1" />
-            </div>
-            <div className="col-md-6 input-group-sm">
-              <label htmlFor={`${title.toLowerCase()}-start-time-input`} className="form-label">Start time for run</label>
-              <input onChange={handleScheduledChange} value={schedulingData.scheduledSchedule.startTime} name={'startTime'} id={`${title.toLowerCase()}-start-time-input`} type="time" className="form-control" max={31} placeholder="" aria-label="Username" aria-describedby="basic-addon1" />
-            </div>
           </div>
         </>
       )
@@ -100,13 +124,15 @@ export const SchedulingComponent = ({ title, schedulingData, dispatch }: Schedul
   return (
     <div className="scheduling-container">
       <h6>{title} Scheduling</h6>
-      <div className="col-md-6">
-        <label htmlFor={`${title.toLowerCase()}-job-type-input`} className="form-label">Job Scheduling Type</label>
-        <select id={`${title.toLowerCase()}-job-type-input`} name={'jobType'} className={'form-select'} onChange={(e) => dispatch({ type: "SET_JOB_TYPE", payload: e.target.value })} value={schedulingData.jobType}>
-          <option value={""}>Choose job type ...</option>
-          <option value={"Manual"}>Manual</option>
-          <option value={"Scheduled"}>Scheduled</option>
-        </select>
+      <div className="row">
+        <div className="col-md-6">
+          <label htmlFor={`${title.toLowerCase()}-job-type-input`} className="form-label">Job Scheduling Type</label>
+          <select id={`${title.toLowerCase()}-job-type-input`} name={'jobType'} className={'form-select'} onChange={(e) => dispatch({ type: "SET_JOB_TYPE", payload: e.target.value })} value={schedulingData.jobType}>
+            <option value={""}>Choose job type ...</option>
+            <option value={"Manual"}>Manual</option>
+            <option value={"Scheduled"}>Scheduled</option>
+          </select>
+        </div>
       </div>
       {renderForm()}
     </div>

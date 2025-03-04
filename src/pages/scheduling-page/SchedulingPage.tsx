@@ -6,7 +6,6 @@ import {PageTemplate} from "../../components/page-template/PageTemplate.tsx";
 import './Scheduling.css'
 import {SchedulingComponent} from "../../components/scheduling-component/SchedulingComponent.tsx";
 import {toast} from "react-toastify";
-import update = toast.update;
 
 export interface ManualSchedule {
   startDate: string,
@@ -36,7 +35,7 @@ export type Action =
 const initialState: SchedulingData = {
   jobType: "",
   manualSchedule: { startDate: "", endDate: "", docNumber: "" },
-  scheduledSchedule: { timePeriod: "", numOfTimePeriods: 0, dayOfMonth: 1, dayOfWeek: "", startTime: "" },
+  scheduledSchedule: { timePeriod: "", numOfTimePeriods: 1, dayOfMonth: 1, dayOfWeek: "", startTime: "" },
 };
 
 const schedulingReducer = (state: SchedulingData, action: Action): SchedulingData => {
