@@ -10,10 +10,7 @@ import {Account} from "../pages/payment-config-page/PaymentConfigPage.tsx";
 
 export interface OnboardingState {
   credentials: {authToken: string, baseUrl: string}
-  authToken: string;
-  baseUrl: string;
   customerInfo: ICustomerInfo;
-  wildApricotAPI: string,
   generalInfo: IGeneralInformation,
   invoiceScheduling: any,
   paymentScheduling: any,
@@ -50,32 +47,45 @@ export interface OnboardingContextType {
 
 export const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
 
+const getInitialOnboardingState = (): OnboardingState => {
+  const savedBaseUrl = localStorage.getItem("baseUrl") || "";
+  const savedAuthToken = localStorage.getItem("authToken") || "";
+
+  return {
+    credentials: {
+      baseUrl: savedBaseUrl,
+      authToken: savedAuthToken,
+    },
+    customerInfo: {} as ICustomerInfo,
+    generalInfo: {} as IGeneralInformation,
+    invoiceScheduling: null,
+    paymentScheduling: null,
+    donationScheduling: null,
+    completedSteps: JSON.parse(localStorage.getItem("completedSteps") || "[]"),
+    hasClasses: false,
+    donationCampaignName: {AllowedValues: [], FieldName: "", Id: ""},
+    donationCommentName: {AllowedValues: [], FieldName: "", Id: ""},
+    defaultDonationMapping: {} as DonationMapping,
+    donationMappingList: null,
+    accountReceivable: {} as Account,
+    defaultMembershipProduct: {} as InvoiceMapping,
+    defaultEventProduct: {} as InvoiceMapping,
+    defaultStoreProduct: {} as InvoiceMapping,
+    manualInvoiceMapping: {} as InvoiceMapping,
+    membershipLevelMappingList: null,
+    eventMappingList: null,
+    onlineStoreMappingList: null,
+    qbDepositAccount: {} as Account,
+    paymentMappingList: null
+  };
+};
+
 export const OnBoardingProvider = ({children}) => {
   const location = useLocation();
-  const [steps, setSteps] = useState<IStep[]>(() => {
-    const completedSteps = JSON.parse(localStorage.getItem("completedSteps") || "[]");
+  const [steps, setSteps] = useState<IStep[]>(ONBOARDING_STEPS)
 
-    return ONBOARDING_STEPS.map(step => ({
-      ...step,
-      isCompleted: completedSteps.includes(step.endpoint)
-    }));
-  });
 
-  const [onBoardingData, setOnBoardingData] = useState<OnboardingState>(() => {
-    const savedBaseUrl = localStorage.getItem("baseUrl") || "";
-    const savedAuthToken = localStorage.getItem("authToken") || "";
-    const savedWildApricotAPI = localStorage.getItem("waApiKey") || ""
-    return {
-      credentials: {
-        baseUrl: savedBaseUrl,
-        authToken: savedAuthToken,
-      },
-      customerInfo: {},
-      wildApricotAPI: savedWildApricotAPI,
-      generalInfo: {},
-      completedSteps: JSON.parse(localStorage.getItem("completedSteps") || "[]")
-    };
-  });
+  const [onBoardingData, setOnBoardingData] = useState<OnboardingState>(getInitialOnboardingState);
 
   const currentStepIndex = steps.findIndex(step => step.endpoint === location.pathname);
 
@@ -92,7 +102,7 @@ export const OnBoardingProvider = ({children}) => {
     if(onBoardingData.credentials.baseUrl && onBoardingData.credentials.authToken){
       AuthService.setAuth(onBoardingData.credentials.authToken, onBoardingData.credentials.baseUrl);
     }
-  }, [onBoardingData.baseUrl, onBoardingData.authToken]);
+  }, [onBoardingData.credentials.baseUrl, onBoardingData.credentials.authToken]);
 
 
   const updateData = (data) => {
