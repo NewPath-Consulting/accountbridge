@@ -4,18 +4,41 @@ import {ICustomerInfo} from "../pages/customer-info-page/CustomerInformationPage
 import {IGeneralInformation} from "../pages/general-information-page/GeneralInformationPage.tsx";
 import {IStep, ONBOARDING_STEPS} from "../onboardingSteps.tsx";
 import {useLocation} from "react-router-dom";
+import {DonationFieldName, DonationMapping} from "../pages/donation-config-page/DonationConfigPage.tsx";
+import {InvoiceMapping} from "../pages/invoice-configuration-page/InvoiceConfigPage.tsx";
+import {Account} from "../pages/payment-config-page/PaymentConfigPage.tsx";
 
-interface OnboardingState {
+export interface OnboardingState {
+  credentials: {authToken: string, baseUrl: string}
   authToken: string;
   baseUrl: string;
   connections: { name: string; apiKey: string }[];
-  customerInfo: ICustomerInfo | {};
+  customerInfo: ICustomerInfo;
   wildApricotAPI: string,
-  generalInfo: IGeneralInformation | {},
+  generalInfo: IGeneralInformation,
+  invoiceScheduling: any,
+  paymentScheduling: any,
+  donationScheduling: any,
   completedSteps: string[]; // Track completed step endpoints
+  hasClasses: boolean,
+  donationCampaignName: DonationFieldName,
+  donationCommentName: DonationFieldName,
+  defaultDonationMapping: DonationMapping,
+  donationMappingList: any,
+  accountReceivable: Account,
+  defaultMembershipProduct: InvoiceMapping,
+  defaultEventProduct: InvoiceMapping,
+  defaultStoreProduct: InvoiceMapping,
+  manualInvoiceMapping: InvoiceMapping,
+  membershipLevelMappingList: any,
+  eventMappingList: any,
+  onlineStoreMappingList: any,
+  qbDepositAccount: Account,
+  paymentMappingList: any
+
 }
 
-interface OnboardingContextType {
+export interface OnboardingContextType {
   onBoardingData: OnboardingState;
   updateData: (data: any) => void;
   currentStepIndex: number;
@@ -44,8 +67,10 @@ export const OnBoardingProvider = ({children}) => {
     const savedAuthToken = localStorage.getItem("authToken") || "";
     const savedWildApricotAPI = localStorage.getItem("waApiKey") || ""
     return {
-      baseUrl: savedBaseUrl,
-      authToken: savedAuthToken,
+      credentials: {
+        baseUrl: savedBaseUrl,
+        authToken: savedAuthToken,
+      },
       connections: [],
       customerInfo: {},
       wildApricotAPI: savedWildApricotAPI,
@@ -71,7 +96,6 @@ export const OnBoardingProvider = ({children}) => {
     }
   }, [onBoardingData.baseUrl, onBoardingData.authToken]);
 
-  const [currentStep, setCurrentStep] = useState<number>(1);
 
   const updateData = (data) => {
     // Update context state
@@ -132,7 +156,7 @@ export const OnBoardingProvider = ({children}) => {
   };
 
   return (
-    <OnboardingContext.Provider value={{onBoardingData, updateData, currentStep, setCurrentStep, steps, currentStepIndex, canAccessStep, markStepAsCompleted, getNextStep, getPreviousStep}}>
+    <OnboardingContext.Provider value={{onBoardingData, updateData, steps, currentStepIndex, canAccessStep, markStepAsCompleted, getNextStep, getPreviousStep}}>
       {children}
     </OnboardingContext.Provider>
   )

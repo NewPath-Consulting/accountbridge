@@ -32,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedToken = localStorage.getItem('accountbridge_token');
 
     if (storedUser && storedToken) {
-      if(!isTokenExpired(storedToken)){
+      if(isTokenExpired(storedToken)){
         logout()
       }
       else{
