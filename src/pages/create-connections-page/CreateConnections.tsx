@@ -235,10 +235,6 @@ export const CreateConnectionsPage = () => {
       try {
         const response = await getConnections(teamId);
 
-        console.log(response)
-        // Update the context state with fetched connections
-        updateData({ connections: response.data.data });
-
         // Update `isConnectedMap` directly using `response.data`
         setIsConnectedMap((prevMap) => {
           const newMap = new Map(prevMap);

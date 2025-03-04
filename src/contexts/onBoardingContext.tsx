@@ -12,7 +12,6 @@ export interface OnboardingState {
   credentials: {authToken: string, baseUrl: string}
   authToken: string;
   baseUrl: string;
-  connections: { name: string; apiKey: string }[];
   customerInfo: ICustomerInfo;
   wildApricotAPI: string,
   generalInfo: IGeneralInformation,
@@ -40,7 +39,7 @@ export interface OnboardingState {
 
 export interface OnboardingContextType {
   onBoardingData: OnboardingState;
-  updateData: (data: any) => void;
+  updateData: (data: Partial<OnboardingState>) => void;
   currentStepIndex: number;
   steps: IStep[];
   markStepAsCompleted: (endpoint: string) => void;
@@ -71,7 +70,6 @@ export const OnBoardingProvider = ({children}) => {
         baseUrl: savedBaseUrl,
         authToken: savedAuthToken,
       },
-      connections: [],
       customerInfo: {},
       wildApricotAPI: savedWildApricotAPI,
       generalInfo: {},
@@ -91,8 +89,8 @@ export const OnBoardingProvider = ({children}) => {
   }, [onBoardingData.completedSteps]);
 
   useEffect(() => {
-    if(onBoardingData.baseUrl && onBoardingData.authToken){
-      AuthService.setAuth(onBoardingData.authToken, onBoardingData.baseUrl);
+    if(onBoardingData.credentials.baseUrl && onBoardingData.credentials.authToken){
+      AuthService.setAuth(onBoardingData.credentials.authToken, onBoardingData.credentials.baseUrl);
     }
   }, [onBoardingData.baseUrl, onBoardingData.authToken]);
 
