@@ -48,8 +48,8 @@ export const ConnectionModal = (props: IConnectionModal) => {
                 Object.keys(connection.fields).map((field, index) => {
                   return (
                     <div className="mb-3" key={index}>
-                    <label htmlFor={connection.title+'-'+connection.fields[field]} className="col-form-label">{field}:</label>
-                    <input type={connection.fields[field] == 'clientSecret' || connection.fields[field] == 'apiKey' ? "password" : "text"} name={connection.fields[field]} value={connectionFields[field]} placeholder={""} onChange={handleInput} className="form-control" id={connection.title+'-'+connection.fields[field]}  />
+                    <label htmlFor={connection.modalId+'-'+connection.fields[field]} className="col-form-label">{field}:</label>
+                    <input type={connection.fields[field] == 'clientSecret' || connection.fields[field] == 'apiKey' ? "password" : "text"} name={connection.fields[field]} value={connectionFields[field]} placeholder={""} onChange={handleInput} className="form-control" id={connection.modalId+'-'+connection.fields[field]}  />
                   </div>
                   )
                 })

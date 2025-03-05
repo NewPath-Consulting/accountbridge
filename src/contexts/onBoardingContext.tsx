@@ -82,7 +82,15 @@ const getInitialOnboardingState = (): OnboardingState => {
 
 export const OnBoardingProvider = ({children}) => {
   const location = useLocation();
-  const [steps, setSteps] = useState<IStep[]>(ONBOARDING_STEPS)
+  const [steps, setSteps] = useState<IStep[]>(() => {
+    const completedSteps = JSON.parse(localStorage.getItem("completedSteps") || "[]")
+    return ONBOARDING_STEPS.map(step => {
+      return {
+        ...step,
+        isCompleted: completedSteps.includes(step.endpoint)
+      }
+    })
+  })
 
 
   const [onBoardingData, setOnBoardingData] = useState<OnboardingState>(getInitialOnboardingState);
