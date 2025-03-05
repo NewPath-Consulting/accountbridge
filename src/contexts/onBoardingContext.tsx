@@ -7,18 +7,19 @@ import {useLocation} from "react-router-dom";
 import {DonationFieldName, DonationMapping} from "../pages/donation-config-page/DonationConfigPage.tsx";
 import {InvoiceMapping} from "../pages/invoice-configuration-page/InvoiceConfigPage.tsx";
 import {Account} from "../pages/payment-config-page/PaymentConfigPage.tsx";
+import {SchedulingData} from "../pages/scheduling-page/SchedulingPage.tsx";
 
 export interface OnboardingState {
   credentials: {authToken: string, baseUrl: string}
   customerInfo: ICustomerInfo;
   generalInfo: IGeneralInformation,
-  invoiceScheduling: any,
-  paymentScheduling: any,
-  donationScheduling: any,
+  invoiceScheduling: SchedulingData,
+  paymentScheduling: SchedulingData,
+  donationScheduling: SchedulingData,
   completedSteps: string[]; // Track completed step endpoints
   hasClasses: boolean,
-  donationCampaignName: DonationFieldName,
-  donationCommentName: DonationFieldName,
+  donationCampaign: DonationFieldName,
+  donationComment: DonationFieldName,
   defaultDonationMapping: DonationMapping,
   donationMappingList: any,
   accountReceivable: Account,
@@ -58,13 +59,13 @@ const getInitialOnboardingState = (): OnboardingState => {
     },
     customerInfo: {} as ICustomerInfo,
     generalInfo: {} as IGeneralInformation,
-    invoiceScheduling: null,
-    paymentScheduling: null,
-    donationScheduling: null,
+    invoiceScheduling: {} as SchedulingData,
+    paymentScheduling: {} as SchedulingData,
+    donationScheduling: {} as SchedulingData,
     completedSteps: JSON.parse(localStorage.getItem("completedSteps") || "[]"),
     hasClasses: false,
-    donationCampaignName: {AllowedValues: [], FieldName: "", Id: ""},
-    donationCommentName: {AllowedValues: [], FieldName: "", Id: ""},
+    donationCampaign: {Id: "", FieldName: ""} as DonationFieldName,
+    donationComment: {Id: "", FieldName: ""} as DonationFieldName,
     defaultDonationMapping: {} as DonationMapping,
     donationMappingList: null,
     accountReceivable: {} as Account,
