@@ -1,12 +1,14 @@
 import * as React from "react";
 import './Scheduling.css'
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {Action, SchedulingData} from "../../pages/scheduling-page/SchedulingPage.tsx";
 interface SchedulingComponentProps {
   title: string,
   schedulingData: SchedulingData,
   dispatch: React.Dispatch<Action>
 }
+
+
 
 export const SchedulingComponent = ({ title, schedulingData, dispatch }: SchedulingComponentProps) => {
 

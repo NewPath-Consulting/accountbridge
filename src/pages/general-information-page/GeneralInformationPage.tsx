@@ -32,7 +32,7 @@ export const GeneralInformationPage = () => {
 
   useEffect(() => {
     if(Object.keys(onBoardingData.generalInfo).length !== 0) {
-      setFormData(onBoardingData.generalInfo)
+      setFormData(prevState => ({...prevState, ...onBoardingData.generalInfo}))
 
       if(onBoardingData.generalInfo?.toEmailAddresses){
         setRawEmailInput(onBoardingData.generalInfo.toEmailAddresses.join(', '))

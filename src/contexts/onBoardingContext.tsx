@@ -8,14 +8,16 @@ import {DonationFieldName, DonationMapping} from "../pages/donation-config-page/
 import {InvoiceMapping} from "../pages/invoice-configuration-page/InvoiceConfigPage.tsx";
 import {Account} from "../pages/payment-config-page/PaymentConfigPage.tsx";
 import {SchedulingData} from "../pages/scheduling-page/SchedulingPage.tsx";
+import {useAuth} from "../hooks/useAuth.tsx";
+import {getOnboardingData} from "../services/api/users-api/onboardingData.ts";
 
 export interface OnboardingState {
   credentials: {authToken: string, baseUrl: string}
   customerInfo: ICustomerInfo;
   generalInfo: IGeneralInformation,
-  invoiceScheduling: SchedulingData,
-  paymentScheduling: SchedulingData,
-  donationScheduling: SchedulingData,
+  invoiceScheduling: SchedulingData | null,
+  paymentScheduling: SchedulingData | null,
+  donationScheduling: SchedulingData | null,
   completedSteps: string[]; // Track completed step endpoints
   hasClasses: boolean,
   donationCampaign: DonationFieldName,
@@ -59,9 +61,9 @@ const getInitialOnboardingState = (): OnboardingState => {
     },
     customerInfo: {} as ICustomerInfo,
     generalInfo: {} as IGeneralInformation,
-    invoiceScheduling: {} as SchedulingData,
-    paymentScheduling: {} as SchedulingData,
-    donationScheduling: {} as SchedulingData,
+    invoiceScheduling: null,
+    paymentScheduling: null,
+    donationScheduling: null,
     completedSteps: JSON.parse(localStorage.getItem("completedSteps") || "[]"),
     hasClasses: false,
     donationCampaign: {Id: "", FieldName: ""} as DonationFieldName,
@@ -83,6 +85,7 @@ const getInitialOnboardingState = (): OnboardingState => {
 
 export const OnBoardingProvider = ({children}) => {
   const location = useLocation();
+  const { currentUser } = useAuth();
   const [steps, setSteps] = useState<IStep[]>(() => {
     const completedSteps = JSON.parse(localStorage.getItem("completedSteps") || "[]")
     return ONBOARDING_STEPS.map(step => {
@@ -112,6 +115,22 @@ export const OnBoardingProvider = ({children}) => {
       AuthService.setAuth(onBoardingData.credentials.authToken, onBoardingData.credentials.baseUrl);
     }
   }, [onBoardingData.credentials.baseUrl, onBoardingData.credentials.authToken]);
+
+  useEffect(() => {
+    const fetchOnboardingData = async() => {
+      try{
+        const response = await getOnboardingData(localStorage.getItem('accountbridge_token'))
+        console.log(response.data)
+        setOnBoardingData(prev => ({...prev, ...response.data}))
+      }
+      catch (e){
+        throw new Error(e)
+      }
+
+    }
+
+    fetchOnboardingData()
+  }, []);
 
 
   const updateData = (data) => {

@@ -140,6 +140,7 @@ export const InvoiceConfigPage = () => {
     });
 
     console.log(defaultMembershipProduct)
+    console.log(onBoardingData)
 
   }, [
     invoiceConfigurations,
