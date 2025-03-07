@@ -139,6 +139,9 @@ export const InvoiceConfigPage = () => {
       manualInvoiceMapping
     });
 
+    console.log(defaultMembershipProduct)
+    console.log(onBoardingData)
+
   }, [
     invoiceConfigurations,
     membershipLevelMappingList,

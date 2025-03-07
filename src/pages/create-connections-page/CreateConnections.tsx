@@ -16,21 +16,23 @@ export interface IConnection {
   accountType: string,
   scopes ?: string[],
   fields: {},
-  secondaryFields ?: {};
+  secondaryFields ?: {},
+  modalId: string
 }
 const connectionsList: IConnection[] = [
   {
     img: "wa-logo.png",
-    title: "WildApricot-1",
+    title: "WildApricot",
     description: "Connect to your Wild Apricot account to automate your workflows in Make",
     accountType: "wild-apricot",
     scopes: ["auto"],
     fields: {"API Key": "apiKey"},
+    modalId: "wild-apricot-1"
   },
 
   {
     img: "qb-logo.png",
-    title: "QuickBooks-1",
+    title: "QuickBooks",
     description: "Connect to QuickBooks to automate your workflows with Make",
     accountType: "quickbooks",
     scopes: [
@@ -39,29 +41,40 @@ const connectionsList: IConnection[] = [
     "openid"
     ],
     fields: {},
+    modalId: "quickbooks-1"
   },
   {
     img: "mg-logo.png",
     title: "Mailgun",
     description: "Link your Mailgun account to handle all email communications with your members.",
     accountType: "mailgun2",
-    fields: {"API Key": "apiKey", "Base Url": "baseUrl"}
-  }
+    fields: {"API Key": "apiKey", "Base Url": "baseUrl"},
+    modalId: "mailgun-1"
+  },
+  {
+    img: "box-logo.svg",
+    title: "Box Connection",
+    description: "Connect to Box to automate your workflows with Make",
+    accountType: "box2",
+    fields: {},
+    modalId: "box-1"
+  },
 ]
 
 const accountBridgeConnectionsList: IConnection[] = [
   {
     img: "wa-logo.png",
-    title: "WildApricot-2",
+    title: "WildApricot",
     description: "Connect to your Wild Apricot account to manage your organization's membership data and events.",
     accountType: "wild-apricot",
     scopes: ["auto"],
     fields: {"API Key": "apiKey"},
+    modalId: "wild-apricot-2"
   },
 
   {
     img: "qb-logo.png",
-    title: "QuickBooks-2",
+    title: "QuickBooks",
     description: "Connect to QuickBooks to automatically sync your financial transactions and manage billing.",
     accountType: "quickbooks",
     scopes: [
@@ -70,6 +83,7 @@ const accountBridgeConnectionsList: IConnection[] = [
       "openid"
     ],
     fields: {"Client Id": "clientId", "Client Secret": "clientSecret"},
+    modalId: "quickbooks-2"
   }
 ]
 
@@ -221,10 +235,6 @@ export const CreateConnectionsPage = () => {
       try {
         const response = await getConnections(teamId);
 
-        console.log(response)
-        // Update the context state with fetched connections
-        updateData({ connections: response.data.data });
-
         // Update `isConnectedMap` directly using `response.data`
         setIsConnectedMap((prevMap) => {
           const newMap = new Map(prevMap);
@@ -280,11 +290,11 @@ export const CreateConnectionsPage = () => {
     <PageTemplate title={'Connect your Tools'} subTitle={'Set up your app connections to automate your workflows.'} validate={handleNextPage} errorMsg={errorMsg}>
       <div>
         <h6 className={'mb-3 ms-2 fw-light'}>Connect To Make</h6>
-        <div className={'row mb-3'}>
+        <div className={'row mb-5 g-4'}>
           {connectionsList.map((connection, index) => <ConnectionComponent key={index} isLoading={isLoadingMap.get(connection.accountType) || false} createConnection={handleConnection} isConnected={isConnectedMap.get(connection.accountType) || false} connection={connection}/>)}
         </div>
         <h6 className={'mb-3 ms-2 fw-light'}>Connect To AccountBridge</h6>
-        <div className={'row mb-3'}>
+        <div className={'row mb-3 g-4'}>
           {accountBridgeConnectionsList.map((connection, index) => <ConnectionComponent key={index} isLoading={isLoadingMap.get(connection.accountType) || false} createConnection={createConnectionToAccountBridge} isConnected={isAppConnectedToAccountBridgeMap.get(connection.accountType) || false} connection={connection}/>)}
         </div>
       </div>

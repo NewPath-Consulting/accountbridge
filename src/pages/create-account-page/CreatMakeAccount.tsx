@@ -34,8 +34,8 @@ export const CreatMakeAccountPage = () => {
   useEffect(() => {
     setAuthData((prevState) => ({
       ...prevState,
-      authToken: onBoardingData.authToken.length ? onBoardingData.authToken : prevState.authToken,
-      baseUrl: onBoardingData.baseUrl.length ? onBoardingData.baseUrl : prevState.baseUrl,
+      authToken: onBoardingData.credentials.authToken.length ? onBoardingData.credentials.authToken : prevState.authToken,
+      baseUrl: onBoardingData.credentials.baseUrl.length ? onBoardingData.credentials.baseUrl : prevState.baseUrl,
     }));
   }, [onBoardingData]);
 
@@ -46,7 +46,7 @@ export const CreatMakeAccountPage = () => {
     try{
       await getUserInfo();
 
-      updateData({authToken: authData.authToken, baseUrl: authData.baseUrl});
+      updateData({credentials: {authToken: authData.authToken, baseUrl: authData.baseUrl}});
       markStepAsCompleted('/');
       const nextStep = getNextStep();
       if (nextStep) {

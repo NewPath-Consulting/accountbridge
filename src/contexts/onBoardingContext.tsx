@@ -4,20 +4,42 @@ import {ICustomerInfo} from "../pages/customer-info-page/CustomerInformationPage
 import {IGeneralInformation} from "../pages/general-information-page/GeneralInformationPage.tsx";
 import {IStep, ONBOARDING_STEPS} from "../onboardingSteps.tsx";
 import {useLocation} from "react-router-dom";
+import {DonationFieldName, DonationMapping} from "../pages/donation-config-page/DonationConfigPage.tsx";
+import {InvoiceMapping} from "../pages/invoice-configuration-page/InvoiceConfigPage.tsx";
+import {Account} from "../pages/payment-config-page/PaymentConfigPage.tsx";
+import {SchedulingData} from "../pages/scheduling-page/SchedulingPage.tsx";
+import {useAuth} from "../hooks/useAuth.tsx";
+import {getOnboardingData} from "../services/api/users-api/onboardingData.ts";
 
-interface OnboardingState {
-  authToken: string;
-  baseUrl: string;
-  connections: { name: string; apiKey: string }[];
-  customerInfo: ICustomerInfo | {};
-  wildApricotAPI: string,
-  generalInfo: IGeneralInformation | {},
+export interface OnboardingState {
+  credentials: {authToken: string, baseUrl: string}
+  customerInfo: ICustomerInfo;
+  generalInfo: IGeneralInformation,
+  invoiceScheduling: SchedulingData | null,
+  paymentScheduling: SchedulingData | null,
+  donationScheduling: SchedulingData | null,
   completedSteps: string[]; // Track completed step endpoints
+  hasClasses: boolean,
+  donationCampaign: DonationFieldName,
+  donationComment: DonationFieldName,
+  defaultDonationMapping: DonationMapping,
+  donationMappingList: any,
+  accountReceivable: Account,
+  defaultMembershipProduct: InvoiceMapping,
+  defaultEventProduct: InvoiceMapping,
+  defaultStoreProduct: InvoiceMapping,
+  manualInvoiceMapping: InvoiceMapping,
+  membershipLevelMappingList: any,
+  eventMappingList: any,
+  onlineStoreMappingList: any,
+  qbDepositAccount: Account,
+  paymentMappingList: any
+
 }
 
-interface OnboardingContextType {
+export interface OnboardingContextType {
   onBoardingData: OnboardingState;
-  updateData: (data: any) => void;
+  updateData: (data: Partial<OnboardingState>) => void;
   currentStepIndex: number;
   steps: IStep[];
   markStepAsCompleted: (endpoint: string) => void;
@@ -28,31 +50,54 @@ interface OnboardingContextType {
 
 export const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
 
-export const OnBoardingProvider = ({children}) => {
-  const location = useLocation();
-  const [steps, setSteps] = useState<IStep[]>(() => {
-    const completedSteps = JSON.parse(localStorage.getItem("completedSteps") || "[]");
+const getInitialOnboardingState = (): OnboardingState => {
+  const savedBaseUrl = localStorage.getItem("baseUrl") || "";
+  const savedAuthToken = localStorage.getItem("authToken") || "";
 
-    return ONBOARDING_STEPS.map(step => ({
-      ...step,
-      isCompleted: completedSteps.includes(step.endpoint)
-    }));
-  });
-
-  const [onBoardingData, setOnBoardingData] = useState<OnboardingState>(() => {
-    const savedBaseUrl = localStorage.getItem("baseUrl") || "";
-    const savedAuthToken = localStorage.getItem("authToken") || "";
-    const savedWildApricotAPI = localStorage.getItem("waApiKey") || ""
-    return {
+  return {
+    credentials: {
       baseUrl: savedBaseUrl,
       authToken: savedAuthToken,
-      connections: [],
-      customerInfo: {},
-      wildApricotAPI: savedWildApricotAPI,
-      generalInfo: {},
-      completedSteps: JSON.parse(localStorage.getItem("completedSteps") || "[]")
-    };
-  });
+    },
+    customerInfo: {} as ICustomerInfo,
+    generalInfo: {} as IGeneralInformation,
+    invoiceScheduling: null,
+    paymentScheduling: null,
+    donationScheduling: null,
+    completedSteps: JSON.parse(localStorage.getItem("completedSteps") || "[]"),
+    hasClasses: false,
+    donationCampaign: {Id: "", FieldName: ""} as DonationFieldName,
+    donationComment: {Id: "", FieldName: ""} as DonationFieldName,
+    defaultDonationMapping: {} as DonationMapping,
+    donationMappingList: null,
+    accountReceivable: {} as Account,
+    defaultMembershipProduct: {} as InvoiceMapping,
+    defaultEventProduct: {} as InvoiceMapping,
+    defaultStoreProduct: {} as InvoiceMapping,
+    manualInvoiceMapping: {} as InvoiceMapping,
+    membershipLevelMappingList: null,
+    eventMappingList: null,
+    onlineStoreMappingList: null,
+    qbDepositAccount: {} as Account,
+    paymentMappingList: null
+  };
+};
+
+export const OnBoardingProvider = ({children}) => {
+  const location = useLocation();
+  const { currentUser } = useAuth();
+  const [steps, setSteps] = useState<IStep[]>(() => {
+    const completedSteps = JSON.parse(localStorage.getItem("completedSteps") || "[]")
+    return ONBOARDING_STEPS.map(step => {
+      return {
+        ...step,
+        isCompleted: completedSteps.includes(step.endpoint)
+      }
+    })
+  })
+
+
+  const [onBoardingData, setOnBoardingData] = useState<OnboardingState>(getInitialOnboardingState);
 
   const currentStepIndex = steps.findIndex(step => step.endpoint === location.pathname);
 
@@ -66,12 +111,27 @@ export const OnBoardingProvider = ({children}) => {
   }, [onBoardingData.completedSteps]);
 
   useEffect(() => {
-    if(onBoardingData.baseUrl && onBoardingData.authToken){
-      AuthService.setAuth(onBoardingData.authToken, onBoardingData.baseUrl);
+    if(onBoardingData.credentials.baseUrl && onBoardingData.credentials.authToken){
+      AuthService.setAuth(onBoardingData.credentials.authToken, onBoardingData.credentials.baseUrl);
     }
-  }, [onBoardingData.baseUrl, onBoardingData.authToken]);
+  }, [onBoardingData.credentials.baseUrl, onBoardingData.credentials.authToken]);
 
-  const [currentStep, setCurrentStep] = useState<number>(1);
+  useEffect(() => {
+    const fetchOnboardingData = async() => {
+      try{
+        const response = await getOnboardingData(localStorage.getItem('accountbridge_token'))
+        console.log(response.data)
+        setOnBoardingData(prev => ({...prev, ...response.data}))
+      }
+      catch (e){
+        throw new Error(e)
+      }
+
+    }
+
+    fetchOnboardingData()
+  }, []);
+
 
   const updateData = (data) => {
     // Update context state
@@ -132,7 +192,7 @@ export const OnBoardingProvider = ({children}) => {
   };
 
   return (
-    <OnboardingContext.Provider value={{onBoardingData, updateData, currentStep, setCurrentStep, steps, currentStepIndex, canAccessStep, markStepAsCompleted, getNextStep, getPreviousStep}}>
+    <OnboardingContext.Provider value={{onBoardingData, updateData, steps, currentStepIndex, canAccessStep, markStepAsCompleted, getNextStep, getPreviousStep}}>
       {children}
     </OnboardingContext.Provider>
   )

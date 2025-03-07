@@ -46,6 +46,11 @@ const endpoints = {
     getScenarioDetails: "makeApi/scenarios/:scenarioId",
     hooks: "makeApi/hooks"
   },
+  userApi: {
+    login: "api/users/login",
+    register: "api/users/register",
+    getOnboardingData: "api/users/onboarding-data"
+  }
 };
 
 export default endpoints;

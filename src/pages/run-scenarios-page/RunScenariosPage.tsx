@@ -127,6 +127,7 @@ export const RunScenariosPage = () => {
       }
     }
     catch(e){
+      console.log(e)
       setErrorMsg(e.response.data.error)
     }
     finally {

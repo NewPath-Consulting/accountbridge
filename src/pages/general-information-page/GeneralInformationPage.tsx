@@ -32,7 +32,7 @@ export const GeneralInformationPage = () => {
 
   useEffect(() => {
     if(Object.keys(onBoardingData.generalInfo).length !== 0) {
-      setFormData(onBoardingData.generalInfo)
+      setFormData(prevState => ({...prevState, ...onBoardingData.generalInfo}))
 
       if(onBoardingData.generalInfo?.toEmailAddresses){
         setRawEmailInput(onBoardingData.generalInfo.toEmailAddresses.join(', '))
@@ -108,7 +108,7 @@ export const GeneralInformationPage = () => {
 
   const handleAccountChange = (e) => {
     const orgName = WildApricotAccounts.find(account => account.Id == e.target.value);
-    setFormData({...formData, accountId: e.target.value, organizationName: orgName.Name ?? ""})
+    setFormData({...formData, accountId: e.target.value, organizationName: orgName ?  orgName.Name : "", recordName: orgName ? `<${orgName.Name}>-<Master-Use>` : ""})
   }
 
   const handleToEmailAddressesChange = (e) => {
@@ -178,10 +178,10 @@ export const GeneralInformationPage = () => {
             </div>
             <div className="col-md-5">
               <label htmlFor={'config-name'}>WA Config Record Name</label>
-              <p>n/a for initial change</p>
+              <p>This field is populated when account is chosen</p>
             </div>
             <div className="col-md-7">
-              <input value={formData.recordName} name={'recordName'} onChange={handleFormData} id={'config-name'} type={"text"} placeholder={'ex. <Customer-name>-<master-use>'} className={'form-control form-control-sm'}/>
+              <input value={formData.recordName} name={'recordName'} onChange={handleFormData} id={'config-name'} type={"text"} disabled={true} placeholder={''} className={'form-control form-control-sm'}/>
             </div>
             <div className="col-md-5">
               <label htmlFor={'time-zone-input'}>Org Time Zone</label>
