@@ -89,9 +89,9 @@ export const DonationConfigPage = () => {
   const errorRef = useRef(null)
 
   useEffect(() => {
-    fetchData("select * from item", setProducts, "Item", setErrorMsg)
-    fetchData("select * from class", setClasses, "Class", setErrorMsg)
-    fetchData("select * from account where AccountType = 'Bank'", setAccountList, "Account", setErrorMsg)
+    fetchData("select * from item", setProducts, "Item", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
+    fetchData("select * from class", setClasses, "Class", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
+    fetchData("select * from account where AccountType = 'Bank'", setAccountList, "Account", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
 
 
 

@@ -59,8 +59,8 @@ export const PaymentConfigPage = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    fetchData("select * from paymentmethod", setQBPaymentMethods, "PaymentMethod", setErrorMsg)
-    fetchData("select * from account where AccountType IN ('Other Current Asset', 'Bank')", setDepositAccountsList, "Account", setErrorMsg)
+    fetchData("select * from paymentmethod", setQBPaymentMethods, "PaymentMethod", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
+    fetchData("select * from account where AccountType IN ('Other Current Asset', 'Bank')", setDepositAccountsList, "Account", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
 
     const listTenders = async () => {
       try{
