@@ -85,7 +85,7 @@ const getInitialOnboardingState = (): OnboardingState => {
 
 export const OnBoardingProvider = ({children}) => {
   const location = useLocation();
-  const { currentUser } = useAuth();
+  const [isInitialized, setIsInitialized] = useState(false);
   const [steps, setSteps] = useState<IStep[]>(() => {
     const completedSteps = JSON.parse(localStorage.getItem("completedSteps") || "[]")
     return ONBOARDING_STEPS.map(step => {
@@ -120,11 +120,13 @@ export const OnBoardingProvider = ({children}) => {
     const fetchOnboardingData = async() => {
       try{
         const response = await getOnboardingData(localStorage.getItem('accountbridge_token'))
-        console.log(response.data)
         setOnBoardingData(prev => ({...prev, ...response.data}))
       }
       catch (e){
         throw new Error(e)
+      }
+      finally {
+        setIsInitialized(true)
       }
 
     }
@@ -132,6 +134,9 @@ export const OnBoardingProvider = ({children}) => {
     fetchOnboardingData()
   }, []);
 
+  useEffect(() => {
+    console.log(onBoardingData)
+  }, [onBoardingData]);
 
   const updateData = (data) => {
     // Update context state
@@ -190,6 +195,10 @@ export const OnBoardingProvider = ({children}) => {
     }
     return null;
   };
+
+  if(!isInitialized){
+    return <></>
+  }
 
   return (
     <OnboardingContext.Provider value={{onBoardingData, updateData, steps, currentStepIndex, canAccessStep, markStepAsCompleted, getNextStep, getPreviousStep}}>

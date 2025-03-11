@@ -50,15 +50,7 @@ const connectionsList: IConnection[] = [
     accountType: "mailgun2",
     fields: {"API Key": "apiKey", "Base Url": "baseUrl"},
     modalId: "mailgun-1"
-  },
-  {
-    img: "box-logo.svg",
-    title: "Box Connection",
-    description: "Connect to Box to automate your workflows with Make",
-    accountType: "box2",
-    fields: {},
-    modalId: "box-1"
-  },
+  }
 ]
 
 const accountBridgeConnectionsList: IConnection[] = [

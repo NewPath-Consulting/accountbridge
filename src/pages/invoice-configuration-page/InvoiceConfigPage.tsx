@@ -49,9 +49,9 @@ export const InvoiceConfigPage = () => {
   useEffect(() => {
 
     Promise.all([
-      fetchData("select * from item", setProducts, "Item", setErrorMsg),
-      fetchData("select * from account where AccountType = 'Accounts Receivable'", setAccountList, "Account", setErrorMsg),
-      fetchData("select * from class", setClasses, "Class", setErrorMsg)
+      fetchData("select * from item", setProducts, "Item", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl),
+      fetchData("select * from account where AccountType = 'Accounts Receivable'", setAccountList, "Account", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl),
+      fetchData("select * from class", setClasses, "Class", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
     ])
 
     const fetchWithErrorHandling = async (
