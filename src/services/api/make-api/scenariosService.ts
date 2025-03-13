@@ -21,8 +21,8 @@ export const getScenarios = async (): Promise<AxiosResponse<IScenarioResponse[]>
   return httpClient.get(endpoints.makeApi.listScenarios)
 }
 
-export const getUserScenarios = async (teamId: number, folderId: number): Promise<AxiosResponse<IScenarioResponse[]>> => {
-  const params = {teamId, folderId}
+export const getUserScenarios = async (teamId: number): Promise<AxiosResponse<IScenarioResponse[]>> => {
+  const params = {teamId}
   return httpClient.get(endpoints.makeApi.listScenarios, {params})
 }
 
@@ -58,5 +58,9 @@ export const activateScenario =  async (scenarioId): Promise<AxiosResponse<Activ
   catch(e){
     console.log(e)
   }
+}
+
+export const cloneScenario = async (scenarioId: string, body: any) => {
+  return httpClient.post(endpoints.makeApi.cloneScenarios.replace(":scenarioId", scenarioId), body)
 }
 

@@ -8,7 +8,8 @@ import {
   getScenarios, getUserScenarios,
   runScenario
 } from "../../services/api/make-api/scenariosService.ts";
-import {folderId, teamId} from "../../App.tsx";
+import {folderId} from "../../App.tsx";
+import {useOnBoarding} from "../../hooks/useOnboarding.ts";
 
 interface ScenarioRun {
   scenarioId: number,
@@ -26,6 +27,7 @@ interface ScenarioRun {
 export const RunScenariosPage = () => {
   const [errorMsg, setErrorMsg] = useState<string | string[]>('')
   const [scenarios, setScenarios] = useState<ScenarioRun[]>([]);
+  const { onBoardingData } = useOnBoarding()
 
   const handleSubmission = () => {
 
@@ -34,7 +36,7 @@ export const RunScenariosPage = () => {
   useEffect(() => {
     const listScenarios = async() => {
       try {
-        const response = await getUserScenarios(teamId, folderId )
+        const response = await getUserScenarios(onBoardingData.teamId)
 
         const scenarios: ScenarioRun[] = response.data.map((scenario, index) => {
           let subtitle;

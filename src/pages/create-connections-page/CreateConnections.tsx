@@ -7,7 +7,6 @@ import {useNavigate} from "react-router-dom";
 import {getWildApricotAccessToken, wildApricotLogin} from "../../services/api/wild-apricot-api/authService.ts";
 import {getQuickbooksAccessToken} from "../../services/api/quickbooks-api/authService.ts";
 import {PageTemplate} from "../../components/page-template/PageTemplate.tsx";
-import {teamId} from "../../App.tsx";
 
 export interface IConnection {
   img: string,
@@ -80,7 +79,7 @@ const accountBridgeConnectionsList: IConnection[] = [
 ]
 
 export const CreateConnectionsPage = () => {
-  const {updateData, markStepAsCompleted, getNextStep, getPreviousStep} = useOnBoarding();
+  const {updateData, markStepAsCompleted, getNextStep, getPreviousStep, onBoardingData} = useOnBoarding();
   const [errorMsg, setErrorMsg] = useState("");
   const [isConnectedMap, setIsConnectedMap] = useState(() => {
     return new Map(
@@ -206,10 +205,10 @@ export const CreateConnectionsPage = () => {
     };
 
     try {
-      const connectionResponse = await createConnection(connectionBody, teamId);
+      const connectionResponse = await createConnection(connectionBody, onBoardingData.teamId);
       console.log(connectionResponse)
       const connectionId = connectionResponse.data.id;
-      const URL = `https://us1.make.com/api/v2/oauth/auth/${connectionId}`;
+      const URL = `https://us2.make.com/api/v2/oauth/auth/${connectionId}`;
 
       const authWindow = openAuthWindow(URL);
       await monitorAuthWindow(authWindow, connectionId, connectionBody);
@@ -225,7 +224,7 @@ export const CreateConnectionsPage = () => {
   useEffect(() => {
     const listConnections = async () => {
       try {
-        const response = await getConnections(teamId);
+        const response = await getConnections(onBoardingData.teamId);
 
         // Update `isConnectedMap` directly using `response.data`
         setIsConnectedMap((prevMap) => {

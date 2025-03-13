@@ -12,7 +12,7 @@ import {useAuth} from "../hooks/useAuth.tsx";
 import {getOnboardingData} from "../services/api/users-api/onboardingData.ts";
 
 export interface OnboardingState {
-  credentials: {authToken: string, baseUrl: string}
+  teamId: number;
   customerInfo: ICustomerInfo;
   generalInfo: IGeneralInformation,
   invoiceScheduling: SchedulingData | null,
@@ -34,7 +34,6 @@ export interface OnboardingState {
   onlineStoreMappingList: any,
   qbDepositAccount: Account,
   paymentMappingList: any
-
 }
 
 export interface OnboardingContextType {
@@ -51,14 +50,8 @@ export interface OnboardingContextType {
 export const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
 
 const getInitialOnboardingState = (): OnboardingState => {
-  const savedBaseUrl = localStorage.getItem("baseUrl") || "";
-  const savedAuthToken = localStorage.getItem("authToken") || "";
-
   return {
-    credentials: {
-      baseUrl: savedBaseUrl,
-      authToken: savedAuthToken,
-    },
+    teamId: 0,
     customerInfo: {} as ICustomerInfo,
     generalInfo: {} as IGeneralInformation,
     invoiceScheduling: null,
@@ -110,11 +103,6 @@ export const OnBoardingProvider = ({children}) => {
     console.log(steps)
   }, [onBoardingData.completedSteps]);
 
-  useEffect(() => {
-    if(onBoardingData.credentials.baseUrl && onBoardingData.credentials.authToken){
-      AuthService.setAuth(onBoardingData.credentials.authToken, onBoardingData.credentials.baseUrl);
-    }
-  }, [onBoardingData.credentials.baseUrl, onBoardingData.credentials.authToken]);
 
   useEffect(() => {
     const fetchOnboardingData = async() => {

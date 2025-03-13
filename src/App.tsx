@@ -27,8 +27,7 @@ import {ProtectedRoute} from "./components/protected-onboarding-route/ProtectedR
 //26aba993-f746-44bf-9378-e71a2ffae2e6
 // teamId: 740188, folderId = 220109
 //teamId: 740495, folderId = 246724
-export const teamId = 740188;
-export const folderId = 220109;
+export const folderId = 63437;
 function App() {
   return (
     <Router>

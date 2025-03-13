@@ -89,7 +89,7 @@ export const CloneScenariosPage = () => {
       setSuccessMsg('');
       setIsLoading(true);
 
-      const response = await cloneConfiguration(data);
+      const response = await cloneConfiguration(data, onBoardingData.teamId);
 
       console.log(response)
       // Success handling

@@ -44,7 +44,8 @@ const endpoints = {
     runScenarios: "makeApi/scenarios/:scenarioId/run",
     activeScenario: "makeApi/scenarios/:scenarioId/start",
     getScenarioDetails: "makeApi/scenarios/:scenarioId",
-    hooks: "makeApi/hooks"
+    hooks: "makeApi/hooks",
+    cloneScenarios: "makeApi/scenarios/:scenarioId/clone"
   },
   userApi: {
     login: "api/users/login",

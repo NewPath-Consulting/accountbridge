@@ -32,21 +32,33 @@ export const CreatMakeAccountPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setAuthData((prevState) => ({
-      ...prevState,
-      authToken: onBoardingData.credentials.authToken.length ? onBoardingData.credentials.authToken : prevState.authToken,
-      baseUrl: onBoardingData.credentials.baseUrl.length ? onBoardingData.credentials.baseUrl : prevState.baseUrl,
-    }));
+    console.log(onBoardingData)
   }, [onBoardingData]);
+  //
+  // const handleVerification = async (e) => {
+  //   e.preventDefault()
+  //   AuthService.setAuth(authData.authToken, authData.baseUrl);
+  //
+  //   try{
+  //     await getUserInfo();
+  //
+  //     updateData({credentials: {authToken: authData.authToken, baseUrl: authData.baseUrl}});
+  //     markStepAsCompleted('/');
+  //     const nextStep = getNextStep();
+  //     if (nextStep) {
+  //       navigate(nextStep);
+  //     }
+  //   }
+  //   catch(e){
+  //     console.error("Incorrect credentials: " + e.response.data.error);
+  //     setErrorMsg(e.response.data.error)
+  //   }
+  // }
 
   const handleVerification = async (e) => {
     e.preventDefault()
-    AuthService.setAuth(authData.authToken, authData.baseUrl);
-
     try{
-      await getUserInfo();
 
-      updateData({credentials: {authToken: authData.authToken, baseUrl: authData.baseUrl}});
       markStepAsCompleted('/');
       const nextStep = getNextStep();
       if (nextStep) {
@@ -116,22 +128,23 @@ export const CreatMakeAccountPage = () => {
       </div>
 
 
-      <form className={""} onSubmit={handleVerification}>
-        {errorMsg && <div style={{fontSize:'13px'}} className="alert alert-danger" role="alert">
-            <i style={{color: "#58151c"}} className={'bi bi-exclamation-circle'}></i> {errorMsg}
-        </div>}
-        <div className="form-floating col-sm-12 mb-3">
-          <input type="password" value={authData.authToken} name={"authToken"} className="form-control" id="access-token" onChange={handleChange} placeholder="http/"/>
-          <label htmlFor="access-token">Access Token</label>
-        </div>
-        <div className="form-floating col-sm-12 mb-3">
-          <input type="text" className="form-control" id="base-url" name={"baseUrl"} value={authData.baseUrl} placeholder="Base Url" onChange={handleChange}/>
-          <label htmlFor="base-url">Base Url</label>
-        </div>
-        <div className="form-group">
-          <button className={"btn-success"} disabled={authData.authToken.length==0 || authData.baseUrl.length == 0} type={"submit"}>Next</button>
-        </div>
-      </form>
+      {/*<form className={""} onSubmit={handleVerification}>*/}
+      {/*  {errorMsg && <div style={{fontSize:'13px'}} className="alert alert-danger" role="alert">*/}
+      {/*      <i style={{color: "#58151c"}} className={'bi bi-exclamation-circle'}></i> {errorMsg}*/}
+      {/*  </div>}*/}
+      {/*  <div className="form-floating col-sm-12 mb-3">*/}
+      {/*    <input type="password" value={authData.authToken} name={"authToken"} className="form-control" id="access-token" onChange={handleChange} placeholder="http/"/>*/}
+      {/*    <label htmlFor="access-token">Access Token</label>*/}
+      {/*  </div>*/}
+      {/*  <div className="form-floating col-sm-12 mb-3">*/}
+      {/*    <input type="text" className="form-control" id="base-url" name={"baseUrl"} value={authData.baseUrl} placeholder="Base Url" onChange={handleChange}/>*/}
+      {/*    <label htmlFor="base-url">Base Url</label>*/}
+      {/*  </div>*/}
+      {/*  <div className="form-group">*/}
+      {/*  </div>*/}
+      {/*</form>*/}
+      <button className={"btn-success"} type={"button"} onClick={handleVerification}>Next</button>
+
     </main>
   )
 }
