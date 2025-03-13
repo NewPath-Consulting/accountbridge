@@ -190,7 +190,7 @@ const cloneScenarios = async (dataStructureMap, createdResources, teamId) => {
       if (!webhooksIdMap.has(webhookRef.id)) {
         // Create new webhook with necessary configuration
         const newWebhook = await createHook({
-          name: `Cloned: ${webhookRef.name}`,
+          name: `${webhookRef.name}`,
           teamId: teamId,
           stringify: false,
           method: false,
