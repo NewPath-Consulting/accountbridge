@@ -2,7 +2,12 @@ import {useOnBoarding} from "../../hooks/useOnboarding.ts";
 import {useEffect, useState} from "react";
 import * as React from "react";
 import {ConnectionComponent} from "../../components/connection-component/ConnectionComponent.tsx";
-import {createConnection, getConnections, verifyConnection} from "../../services/api/make-api/connectionsService.ts";
+import {
+  createConnection,
+  getConnections, getFlow,
+  getTemplateUrl,
+  verifyConnection
+} from "../../services/api/make-api/connectionsService.ts";
 import {useNavigate} from "react-router-dom";
 import {getWildApricotAccessToken, wildApricotLogin} from "../../services/api/wild-apricot-api/authService.ts";
 import {getQuickbooksAccessToken} from "../../services/api/quickbooks-api/authService.ts";
@@ -16,7 +21,8 @@ export interface IConnection {
   scopes ?: string[],
   fields: {},
   secondaryFields ?: {},
-  modalId: string
+  modalId: string,
+  templateId ?: number
 }
 const connectionsList: IConnection[] = [
   {
@@ -25,8 +31,9 @@ const connectionsList: IConnection[] = [
     description: "Connect to your Wild Apricot account to automate your workflows in Make",
     accountType: "wild-apricot",
     scopes: ["auto"],
-    fields: {"API Key": "apiKey"},
-    modalId: "wild-apricot-1"
+    fields: {},
+    modalId: "wild-apricot-1",
+    templateId: 1473
   },
 
   {
@@ -40,15 +47,17 @@ const connectionsList: IConnection[] = [
     "openid"
     ],
     fields: {},
-    modalId: "quickbooks-1"
+    modalId: "quickbooks-1",
+    templateId: 1474
   },
   {
     img: "mg-logo.png",
     title: "Mailgun",
     description: "Link your Mailgun account to handle all email communications with your members.",
     accountType: "mailgun2",
-    fields: {"API Key": "apiKey", "Base Url": "baseUrl"},
-    modalId: "mailgun-1"
+    fields: {},
+    modalId: "mailgun-1",
+    templateId: 1475
   }
 ]
 
@@ -120,25 +129,32 @@ export const CreateConnectionsPage = () => {
   };
 
 
-  const monitorAuthWindow = async (authWindow: Window, connectionId: number, connectionBody: IConnectionBody) => {
+  const monitorAuthWindow = async (authWindow: Window, flowId: string, connection: IConnection) => {
     return new Promise<void>((resolve, reject) => {
       const interval = setInterval(async () => {
         if (authWindow.closed) {
           clearInterval(interval); // Stop monitoring the window
           try {
-            const response = await verifyConnection(connectionId);
+            const response = await getFlow(flowId);
+            console.log(response)
 
-            setIsConnectedMap((prevMap) => {
-              const newMap = new Map(prevMap);
-              newMap.set(connectionBody.accountType, true);
-              return newMap;
-            });
+            if(response.data.result == null || response.data.result?.connection?.length == 0){
+              setErrorMsg("Error setting connection")
+              reject("Error setting connection for " + connection.title)
+            }
 
-            setConnectionLoading(connectionBody.accountType, false);
+            else{
+              setIsConnectedMap((prevMap) => {
+                const newMap = new Map(prevMap);
+                newMap.set(connection.accountType, true);
+                return newMap;
+              });
+            }
+
+            setConnectionLoading(connection.accountType, false);
             resolve();
           } catch (error: any) {
-            setConnectionLoading(connectionBody.accountType, false);
-            setErrorMsg(error.response.data.error + connectionBody.accountName);
+            setErrorMsg(error.response.data.error);
             reject(error);
           }
         }
@@ -194,32 +210,24 @@ export const CreateConnectionsPage = () => {
     }
   }
 
-  const handleConnection = async (credentials: {}, connection: IConnection) => {
-    setConnectionLoading(connection.accountType, true);
 
-    const connectionBody: IConnectionBody = {
-      accountType: connection.accountType,
-      accountName: `${connection.title} Connection`,
-      scopes: connection.scopes,
-      ...credentials
-    };
+  const handleConnection = async (credentials: {}, connection: IConnection) => {
+    const templateId = connection.templateId || -1
 
     try {
-      const connectionResponse = await createConnection(connectionBody, onBoardingData.teamId);
-      console.log(connectionResponse)
-      const connectionId = connectionResponse.data.id;
-      const URL = `https://us2.make.com/api/v2/oauth/auth/${connectionId}`;
+      const response = await getTemplateUrl(onBoardingData.teamId, templateId);
 
-      const authWindow = openAuthWindow(URL);
-      await monitorAuthWindow(authWindow, connectionId, connectionBody);
+      const authWindow = openAuthWindow(response.data.publicUrl)
 
-      setErrorMsg(""); // Clear error message on success
-    } catch (error: any) {
-      setConnectionLoading(connectionBody.accountType, false);
-      setErrorMsg(error.response?.data?.error + connectionBody.accountName || "An error occurred");
-      console.error(error);
+      await monitorAuthWindow(authWindow, response.data.flow.id, connection)
+
+      setErrorMsg("");
     }
-  };
+    catch (e) {
+      console.log(e)
+      setErrorMsg(e || "An error occurred");
+    }
+  }
 
   useEffect(() => {
     const listConnections = async () => {

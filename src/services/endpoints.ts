@@ -45,7 +45,9 @@ const endpoints = {
     activeScenario: "makeApi/scenarios/:scenarioId/start",
     getScenarioDetails: "makeApi/scenarios/:scenarioId",
     hooks: "makeApi/hooks",
-    cloneScenarios: "makeApi/scenarios/:scenarioId/clone"
+    cloneScenarios: "makeApi/scenarios/:scenarioId/clone",
+    getTemplateUrl: "makeApi/instances/flow/init/template",
+    getFlow: "makeApi/instances/flow/:flowId"
   },
   userApi: {
     login: "api/users/login",

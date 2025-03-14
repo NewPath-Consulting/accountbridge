@@ -58,21 +58,6 @@ export const CustomerInformationPage = () => {
     userId: ""
   })
 
-  const handleData = (e) => {
-    const {name, value} = e.target;
-
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-
-    setFormErrors({
-      ...formErrors,
-      [name]: ""
-    })
-
-  }
-
   useEffect(() => {
     if(Object.keys(onBoardingData.customerInfo).length !== 0) {
       setFormData(onBoardingData.customerInfo)
@@ -93,8 +78,6 @@ export const CustomerInformationPage = () => {
         console.log(e)
       }
     }
-
-
 
     getAccountInfo().then(response => {
 
