@@ -12,6 +12,7 @@ import {useNavigate} from "react-router-dom";
 import {getWildApricotAccessToken, wildApricotLogin} from "../../services/api/wild-apricot-api/authService.ts";
 import {getQuickbooksAccessToken} from "../../services/api/quickbooks-api/authService.ts";
 import {PageTemplate} from "../../components/page-template/PageTemplate.tsx";
+import {deleteScenario} from "../../services/api/make-api/scenariosService.ts";
 
 export interface IConnection {
   img: string,
@@ -144,6 +145,10 @@ export const CreateConnectionsPage = () => {
             }
 
             else{
+              const scenarioId = response.data.result.scenarios[0].id;
+
+              await deleteScenario(scenarioId)
+
               setIsConnectedMap((prevMap) => {
                 const newMap = new Map(prevMap);
                 newMap.set(connection.accountType, true);
