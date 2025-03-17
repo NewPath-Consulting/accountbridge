@@ -37,6 +37,9 @@ httpClient.interceptors.request.use(
       config.headers.Authorization = localStorage.getItem("qbAccessToken");
       config.headers.realmId = localStorage.getItem("qbRealmId");
     }
+    else if(config.url.includes("users")) {
+      config.headers.Authorization = localStorage.getItem("accountbridge_token");
+    }
     return config;
   },
   (error) => Promise.reject(error)
