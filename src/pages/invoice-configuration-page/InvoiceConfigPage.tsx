@@ -216,7 +216,7 @@ export const InvoiceConfigPage = () => {
     return errors;
   };
 
-  const handleSubmission = () => {
+  const handleSubmission = async () => {
     const errors = validateConfig();
 
     if (errors.length > 0) {
@@ -224,7 +224,7 @@ export const InvoiceConfigPage = () => {
       return;
     }
 
-    markStepAsCompleted('/invoice-config');
+    await markStepAsCompleted("/invoice-config");
     const nextStep = getNextStep();
     if (nextStep) {
       navigate(nextStep);

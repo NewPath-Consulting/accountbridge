@@ -102,9 +102,9 @@ export const CloneScenariosPage = () => {
     }
   };
 
-  const handleSubmission = () => {
+  const handleSubmission = async () => {
     if(successMsg){
-      markStepAsCompleted('/clone-scenarios')
+      await markStepAsCompleted("/clone-scenarios")
       const endpoint = getNextStep();
       if(endpoint){
         navigate(endpoint);
@@ -113,7 +113,7 @@ export const CloneScenariosPage = () => {
 
     else{
       setErrorMsg('Must automate workflows before continuing!')
-      markStepAsCompleted('/clone-scenarios')
+      await markStepAsCompleted("/clone-scenarios")
       const endpoint = getNextStep();
       if(endpoint){
         navigate(endpoint);

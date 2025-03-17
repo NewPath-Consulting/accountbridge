@@ -158,8 +158,8 @@ export const DonationConfigPage = () => {
     }
   }, [errorMsg]);
 
-  const handleSubmission = () => {
-    markStepAsCompleted('/donation-config');
+  const handleSubmission = async () => {
+    await markStepAsCompleted("/donation-config");
     const nextStep = getNextStep();
     if (nextStep) {
       navigate(nextStep);

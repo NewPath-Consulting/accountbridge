@@ -60,7 +60,7 @@ export const GeneralInformationPage = () => {
       return
     }
 
-    markStepAsCompleted('/general-information');
+    await markStepAsCompleted("/general-information");
     const nextStep = getNextStep();
     if (nextStep) {
       navigate(nextStep);

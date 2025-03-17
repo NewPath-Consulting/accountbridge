@@ -9,16 +9,17 @@ import {InvoiceMapping} from "../pages/invoice-configuration-page/InvoiceConfigP
 import {Account} from "../pages/payment-config-page/PaymentConfigPage.tsx";
 import {SchedulingData} from "../pages/scheduling-page/SchedulingPage.tsx";
 import {useAuth} from "../hooks/useAuth.tsx";
-import {getOnboardingData} from "../services/api/users-api/onboardingData.ts";
+import {getOnboardingData, updateOnboardingStep} from "../services/api/users-api/onboardingData.ts";
+import endpoints from "../services/endpoints.ts";
 
 export interface OnboardingState {
   teamId: number;
+  onboardingStep: number,
   customerInfo: ICustomerInfo;
   generalInfo: IGeneralInformation,
   invoiceScheduling: SchedulingData | null,
   paymentScheduling: SchedulingData | null,
   donationScheduling: SchedulingData | null,
-  completedSteps: string[]; // Track completed step endpoints
   hasClasses: boolean,
   donationCampaign: DonationFieldName,
   donationComment: DonationFieldName,
@@ -41,7 +42,7 @@ export interface OnboardingContextType {
   updateData: (data: Partial<OnboardingState>) => void;
   currentStepIndex: number;
   steps: IStep[];
-  markStepAsCompleted: (endpoint: string) => void;
+  markStepAsCompleted: (endpoint: string) => Promise<void>;
   canAccessStep: (endpoint: string) => boolean;
   getNextStep: () => string | null;
   getPreviousStep: () => string | null;
@@ -52,12 +53,12 @@ export const OnboardingContext = createContext<OnboardingContextType | undefined
 const getInitialOnboardingState = (): OnboardingState => {
   return {
     teamId: 0,
+    onboardingStep: 1,
     customerInfo: {} as ICustomerInfo,
     generalInfo: {} as IGeneralInformation,
     invoiceScheduling: null,
     paymentScheduling: null,
     donationScheduling: null,
-    completedSteps: JSON.parse(localStorage.getItem("completedSteps") || "[]"),
     hasClasses: false,
     donationCampaign: {Id: "", FieldName: ""} as DonationFieldName,
     donationComment: {Id: "", FieldName: ""} as DonationFieldName,
@@ -79,29 +80,24 @@ const getInitialOnboardingState = (): OnboardingState => {
 export const OnBoardingProvider = ({children}) => {
   const location = useLocation();
   const [isInitialized, setIsInitialized] = useState(false);
-  const [steps, setSteps] = useState<IStep[]>(() => {
-    const completedSteps = JSON.parse(localStorage.getItem("completedSteps") || "[]")
-    return ONBOARDING_STEPS.map(step => {
-      return {
-        ...step,
-        isCompleted: completedSteps.includes(step.endpoint)
-      }
-    })
-  })
+  const [steps, setSteps] = useState<IStep[]>(ONBOARDING_STEPS)
 
 
   const [onBoardingData, setOnBoardingData] = useState<OnboardingState>(getInitialOnboardingState);
 
   const currentStepIndex = steps.findIndex(step => step.endpoint === location.pathname);
 
+
   useEffect(() => {
-    steps.forEach(step => {
-      if(onBoardingData.completedSteps.includes(step.endpoint)){
-        step.isCompleted = true
-      }
-    })
-    console.log(steps)
-  }, [onBoardingData.completedSteps]);
+    if (isInitialized) {
+      setSteps(ONBOARDING_STEPS.map((step, index) => {
+        return {
+          ...step,
+          isCompleted: index + 1 < onBoardingData.onboardingStep
+        };
+      }));
+    }
+  }, [isInitialized, onBoardingData.onboardingStep])
 
 
   useEffect(() => {
@@ -129,46 +125,31 @@ export const OnBoardingProvider = ({children}) => {
   const updateData = (data) => {
     // Update context state
     setOnBoardingData((prev) => {
-      const updatedData = { ...prev, ...data }
-
-      // Persist only baseUrl and authToken in localStorage
-      if (data.baseUrl) {
-        localStorage.setItem("baseUrl", data.baseUrl);
-      }
-      if (data.authToken) {
-        localStorage.setItem("authToken", data.authToken);
-      }
-
-      return updatedData;
+      return { ...prev, ...data }
     });
   };
 
-  const markStepAsCompleted = (endpoint: string) => {
-    // Update completedSteps in state
-    if(onBoardingData.completedSteps.includes(endpoint))
-      return;
+  const markStepAsCompleted = async (endpoint: string) => {
+
+    const index = ONBOARDING_STEPS.findIndex(step => step.endpoint === endpoint)
+
+    if(index + 1 < onBoardingData.onboardingStep) {
+      return
+    }
 
     setOnBoardingData(prev => {
-      const completedSteps = [...prev.completedSteps, endpoint];
-      localStorage.setItem("completedSteps", JSON.stringify(completedSteps));
-      return {...prev, completedSteps};
-    });
+      const updatedStep = onBoardingData.onboardingStep + 1;
 
-    // Update steps array to set isCompleted flag
-    setSteps(prevSteps =>
-      prevSteps.map(step =>
-        step.endpoint === endpoint
-          ? {...step, isCompleted: true}
-          : step
-      )
-    );
-  }
+      updateOnboardingStep(updatedStep, localStorage.getItem('accountbridge_token'));
+
+      return { ...prev, onboardingStep: updatedStep };
+    });
+  };
 
   // Check if user can access a specific step
   const canAccessStep = (endpoint: string): boolean => {
     const targetIndex = steps.findIndex(step => step.endpoint === endpoint);
-    const previousSteps = steps.slice(0, targetIndex);
-    return previousSteps.every(step => onBoardingData.completedSteps.includes(step.endpoint));
+    return targetIndex < onBoardingData.onboardingStep
   };
 
   // Get the next available step

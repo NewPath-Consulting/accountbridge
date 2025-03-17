@@ -52,7 +52,8 @@ const endpoints = {
   userApi: {
     login: "api/users/login",
     register: "api/users/register",
-    getOnboardingData: "api/users/onboarding-data"
+    getOnboardingData: "api/users/onboarding-data",
+    updateOnboardingStep: "api/users/onboarding-step"
   }
 };
 

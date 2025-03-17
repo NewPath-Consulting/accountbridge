@@ -83,7 +83,7 @@ export const PaymentConfigPage = () => {
     });
   }, [paymentMappingList, qbDepositAccount]);
 
-  const handleSubmission = () => {
+  const handleSubmission = async () => {
 
     const errors = validateConfig();
 
@@ -92,7 +92,7 @@ export const PaymentConfigPage = () => {
       return
     }
 
-    markStepAsCompleted('/payment-config');
+    await markStepAsCompleted("/payment-config");
     const nextStep = getNextStep();
     if (nextStep) {
       navigate(nextStep);

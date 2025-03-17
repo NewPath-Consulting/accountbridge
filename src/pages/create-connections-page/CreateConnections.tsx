@@ -277,12 +277,12 @@ export const CreateConnectionsPage = () => {
     listConnections();
   }, []); // Empty dependency array ensures this runs once
 
-  const handleNextPage = () => {
+  const handleNextPage = async () => {
     if(Array.from(isConnectedMap).some(val => !val[1]) || Array.from(isAppConnectedToAccountBridgeMap).some(val => !val[1])){
       setErrorMsg("Connect to all apps to continue")
     }
     else{
-      markStepAsCompleted('/create-connections');
+      await markStepAsCompleted("/create-connections");
       const nextStep = getNextStep();
       if (nextStep) {
         navigate(nextStep);

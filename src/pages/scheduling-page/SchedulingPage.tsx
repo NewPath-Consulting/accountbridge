@@ -75,8 +75,9 @@ export const SchedulingPage = () => {
     updateData({ invoiceScheduling, paymentScheduling, donationScheduling})
   }, [invoiceScheduling, paymentScheduling, donationScheduling]);
 
-  const handleSubmission = () => {
-    markStepAsCompleted('/job-scheduling');
+  const handleSubmission = async () => {
+    await markStepAsCompleted("/job-scheduling");
+
     const nextStep = getNextStep();
     if (nextStep) {
       navigate(nextStep);

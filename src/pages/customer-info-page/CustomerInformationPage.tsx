@@ -118,7 +118,7 @@ export const CustomerInformationPage = () => {
     updateData({customerInfo: formData});
   }, [formData]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     console.log(onBoardingData)
     // const errors = validateForm();
     // if (Object.values(errors).some(value => value.trim() !== "")) {
@@ -131,7 +131,7 @@ export const CustomerInformationPage = () => {
     //   navigate("/invoice-config")
     //   console.log(onBoardingData);
     // }
-    markStepAsCompleted('/customer-information');
+    await markStepAsCompleted("/customer-information");
     const nextStep = getNextStep();
     if (nextStep) {
       navigate(nextStep);

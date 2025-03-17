@@ -59,7 +59,8 @@ export const CreatMakeAccountPage = () => {
     e.preventDefault()
     try{
 
-      markStepAsCompleted('/');
+      await markStepAsCompleted('/');
+
       const nextStep = getNextStep();
       if (nextStep) {
         navigate(nextStep);
