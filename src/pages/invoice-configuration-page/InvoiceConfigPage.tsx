@@ -22,7 +22,7 @@ export interface InvoiceMapping {
 }
 
 export const InvoiceConfigPage = () => {
-  const { onBoardingData, updateData, markStepAsCompleted, getNextStep } = useOnBoarding()
+  const { onBoardingData, updateData, markStepAsCompleted, getNextStep, updateOnboardingStep } = useOnBoarding()
 
   const navigate = useNavigate();
 
@@ -217,18 +217,35 @@ export const InvoiceConfigPage = () => {
   };
 
   const handleSubmission = async () => {
-    const errors = validateConfig();
+    try{
+      const errors = validateConfig();
 
-    if (errors.length > 0) {
-      setErrorMsg(errors);  // Show all errors
-      return;
+      if (errors.length > 0) {
+        setErrorMsg(errors);  // Show all errors
+        return;
+      }
+
+      await updateOnboardingStep('/invoice-config', {
+        hasClasses,
+        defaultEventProduct,
+        defaultMembershipProduct,
+        defaultStoreProduct,
+        manualInvoiceMapping,
+        accountReceivable,
+        membershipLevelMappingList,
+        eventMappingList,
+        onlineStoreMappingList
+      })
+      await markStepAsCompleted("/invoice-config");
+      const nextStep = getNextStep();
+      if (nextStep) {
+        navigate(nextStep);
+      }
+    }
+    catch (e){
+      setErrorMsg(e.message || "Cannot save data")
     }
 
-    await markStepAsCompleted("/invoice-config");
-    const nextStep = getNextStep();
-    if (nextStep) {
-      navigate(nextStep);
-    }
   }
 
   const handleMapping = (type, payload, fieldName) => {

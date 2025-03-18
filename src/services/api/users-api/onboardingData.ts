@@ -1,11 +1,11 @@
 import httpClient from "../../httpClient.ts";
 import endpoints from "../../endpoints.ts";
+import {OnboardingState} from "../../../contexts/onBoardingContext.tsx";
 
-export const getOnboardingData = (token: string) => {
-  return httpClient.get(endpoints.userApi.getOnboardingData, {headers: {"Authorization": token}})
+export const getOnboardingData = () => {
+  return httpClient.get(endpoints.userApi.getOnboardingData)
 }
 
-export const updateOnboardingStep = (stepNumber: number, token) => {
-
-  return httpClient.put(endpoints.userApi.updateOnboardingStep, { stepNumber }, {headers: {"Authorization": token}})
+export const updateOnboardingStepNumber = (stepNumber: number) => {
+  return httpClient.put(endpoints.userApi.updateOnboardingStep, { stepNumber })
 }

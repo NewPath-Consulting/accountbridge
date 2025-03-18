@@ -25,7 +25,7 @@ export interface ICustomerInfo {
 }
 
 export const CustomerInformationPage = () => {
-  const {onBoardingData, updateData, markStepAsCompleted, getNextStep} = useOnBoarding();
+  const {onBoardingData, updateData, markStepAsCompleted, getNextStep, updateOnboardingStep} = useOnBoarding();
   const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState("");
   const [fieldNames, setFieldNames] = useState([]);
@@ -113,29 +113,35 @@ export const CustomerInformationPage = () => {
     return errors;
   }
 
-
   useEffect(() => {
     updateData({customerInfo: formData});
   }, [formData]);
 
   const handleSubmit = async () => {
-    console.log(onBoardingData)
-    // const errors = validateForm();
-    // if (Object.values(errors).some(value => value.trim() !== "")) {
-    //   setFormErrors(errors);
-    //   console.log(formErrors)
-    //   setErrorMsg("Please fill in all required fields")
-    // }
-    // else {
-    //   updateData({customerInfo: formData});
-    //   navigate("/invoice-config")
-    //   console.log(onBoardingData);
-    // }
-    await markStepAsCompleted("/customer-information");
-    const nextStep = getNextStep();
-    if (nextStep) {
-      navigate(nextStep);
+    try{
+      console.log(onBoardingData)
+      // const errors = validateForm();
+      // if (Object.values(errors).some(value => value.trim() !== "")) {
+      //   setFormErrors(errors);
+      //   console.log(formErrors)
+      //   setErrorMsg("Please fill in all required fields")
+      // }
+      // else {
+      //   updateData({customerInfo: formData});
+      //   navigate("/invoice-config")
+      //   console.log(onBoardingData);
+      // }
+      await updateOnboardingStep('/customer-info', {customerInfo: formData})
+      await markStepAsCompleted("/customer-information");
+      const nextStep = getNextStep();
+      if (nextStep) {
+        navigate(nextStep);
+      }
     }
+    catch (e){
+      setErrorMsg(e.message || "unable to complete step")
+    }
+
   };
 
   const handleChange = (event) => {

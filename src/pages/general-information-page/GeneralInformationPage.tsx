@@ -20,7 +20,7 @@ export interface IGeneralInformation {
 }
 
 export const GeneralInformationPage = () => {
-  const {onBoardingData, updateData, getNextStep, markStepAsCompleted } = useOnBoarding()
+  const {onBoardingData, updateData, getNextStep, markStepAsCompleted, updateOnboardingStep } = useOnBoarding()
   const navigate = useNavigate();
 
   const [errorMsg, setErrorMsg] = useState<string | string[]>('');
@@ -53,17 +53,24 @@ export const GeneralInformationPage = () => {
     fetchWildApricotAccounts()
   }, []);
   const handleSubmission = async () => {
-    const errors = await validateForm();
 
-    if(errors.length){
-      setErrorMsg(errors)
-      return
+    try{
+      const errors = await validateForm();
+
+      if(errors.length){
+        setErrorMsg(errors)
+        return
+      }
+
+      await updateOnboardingStep('/general-info', {generalInfo: formData})
+      await markStepAsCompleted("/general-information");
+      const nextStep = getNextStep();
+      if (nextStep) {
+        navigate(nextStep);
+      }
     }
-
-    await markStepAsCompleted("/general-information");
-    const nextStep = getNextStep();
-    if (nextStep) {
-      navigate(nextStep);
+    catch (e){
+      setErrorMsg(e.message || "Unable to complete step")
     }
   }
 
@@ -174,14 +181,14 @@ export const GeneralInformationPage = () => {
             </div>
             <div className="col-md-7">
               <input
-                value={formData.organizationName} name={'organizationName'} onChange={handleFormData} type={"text"} id={'wa-org-name'} className={'form-control form-control-sm'} disabled={true} placeholder={''} maxLength={41}/>
+                value={formData.organizationName || ""} name={'organizationName'} onChange={handleFormData} type={"text"} id={'wa-org-name'} className={'form-control form-control-sm'} disabled={true} placeholder={''} maxLength={41}/>
             </div>
             <div className="col-md-5">
               <label htmlFor={'config-name'}>WA Config Record Name</label>
               <p>This field is populated when account is chosen</p>
             </div>
             <div className="col-md-7">
-              <input value={formData.recordName} name={'recordName'} onChange={handleFormData} id={'config-name'} type={"text"} disabled={true} placeholder={''} className={'form-control form-control-sm'}/>
+              <input value={formData.recordName || ""} name={'recordName'} onChange={handleFormData} id={'config-name'} type={"text"} disabled={true} placeholder={''} className={'form-control form-control-sm'}/>
             </div>
             <div className="col-md-5">
               <label htmlFor={'time-zone-input'}>Org Time Zone</label>

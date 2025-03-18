@@ -1,5 +1,5 @@
 import {createContext, useEffect, useState} from "react";
-import {AuthService} from "../services/httpClient.ts";
+import httpClient, {AuthService} from "../services/httpClient.ts";
 import {ICustomerInfo} from "../pages/customer-info-page/CustomerInformationPage.tsx";
 import {IGeneralInformation} from "../pages/general-information-page/GeneralInformationPage.tsx";
 import {IStep, ONBOARDING_STEPS} from "../onboardingSteps.tsx";
@@ -9,7 +9,7 @@ import {InvoiceMapping} from "../pages/invoice-configuration-page/InvoiceConfigP
 import {Account} from "../pages/payment-config-page/PaymentConfigPage.tsx";
 import {SchedulingData} from "../pages/scheduling-page/SchedulingPage.tsx";
 import {useAuth} from "../hooks/useAuth.tsx";
-import {getOnboardingData, updateOnboardingStep} from "../services/api/users-api/onboardingData.ts";
+import {getOnboardingData, updateOnboardingStepNumber} from "../services/api/users-api/onboardingData.ts";
 import endpoints from "../services/endpoints.ts";
 
 export interface OnboardingState {
@@ -42,10 +42,11 @@ export interface OnboardingContextType {
   updateData: (data: Partial<OnboardingState>) => void;
   currentStepIndex: number;
   steps: IStep[];
-  markStepAsCompleted: (endpoint: string) => Promise<void>;
+  markStepAsCompleted: (pathName: string) => Promise<void>;
   canAccessStep: (endpoint: string) => boolean;
   getNextStep: () => string | null;
   getPreviousStep: () => string | null;
+  updateOnboardingStep: (endpoint: string, body: Partial<OnboardingState>) => void
 }
 
 export const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -103,7 +104,7 @@ export const OnBoardingProvider = ({children}) => {
   useEffect(() => {
     const fetchOnboardingData = async() => {
       try{
-        const response = await getOnboardingData(localStorage.getItem('accountbridge_token'))
+        const response = await getOnboardingData()
         setOnBoardingData(prev => ({...prev, ...response.data}))
       }
       catch (e){
@@ -129,9 +130,20 @@ export const OnBoardingProvider = ({children}) => {
     });
   };
 
-  const markStepAsCompleted = async (endpoint: string) => {
+  const updateOnboardingStep = async (endpoint: string, body: Partial<OnboardingState>) => {
 
-    const index = ONBOARDING_STEPS.findIndex(step => step.endpoint === endpoint)
+    try{
+      await httpClient.post(`/api/users${endpoint}`, body)
+    }
+    catch (e){
+      console.log(e)
+      throw new Error(e.response.data.message)
+    }
+  }
+
+  const markStepAsCompleted = async (pathName: string) => {
+
+    const index = ONBOARDING_STEPS.findIndex(step => step.endpoint === pathName)
 
     if(index + 1 < onBoardingData.onboardingStep) {
       return
@@ -140,7 +152,7 @@ export const OnBoardingProvider = ({children}) => {
     setOnBoardingData(prev => {
       const updatedStep = onBoardingData.onboardingStep + 1;
 
-      updateOnboardingStep(updatedStep, localStorage.getItem('accountbridge_token'));
+      updateOnboardingStepNumber(updatedStep);
 
       return { ...prev, onboardingStep: updatedStep };
     });
@@ -170,7 +182,7 @@ export const OnBoardingProvider = ({children}) => {
   }
 
   return (
-    <OnboardingContext.Provider value={{onBoardingData, updateData, steps, currentStepIndex, canAccessStep, markStepAsCompleted, getNextStep, getPreviousStep}}>
+    <OnboardingContext.Provider value={{onBoardingData, updateData, steps, currentStepIndex, canAccessStep, markStepAsCompleted, getNextStep, getPreviousStep, updateOnboardingStep}}>
       {children}
     </OnboardingContext.Provider>
   )
