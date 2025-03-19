@@ -44,7 +44,7 @@ const reducer = (state, action) => {
 }
 
 export const PaymentConfigPage = () => {
-  const { onBoardingData, updateData, getNextStep, markStepAsCompleted } = useOnBoarding();
+  const { onBoardingData, updateData, getNextStep, markStepAsCompleted, updateOnboardingStep } = useOnBoarding();
 
   const [errorMsg, setErrorMsg] = useState<string | string[]>('');
   const [qbPaymentMethods, setQBPaymentMethods] = useState([]);
@@ -85,18 +85,25 @@ export const PaymentConfigPage = () => {
 
   const handleSubmission = async () => {
 
-    const errors = validateConfig();
+    try{
+      const errors = validateConfig();
 
-    if(errors.length > 0){
-      setErrorMsg(errors)
-      return
+      if(errors.length > 0){
+        setErrorMsg(errors)
+        return
+      }
+
+      await updateOnboardingStep('/payment-config', { paymentMappingList, qbDepositAccount})
+      await markStepAsCompleted("/payment-config");
+      const nextStep = getNextStep();
+      if (nextStep) {
+        navigate(nextStep);
+      }
+    }
+    catch (e){
+      setErrorMsg(e.message || "Cannot save payment mappings")
     }
 
-    await markStepAsCompleted("/payment-config");
-    const nextStep = getNextStep();
-    if (nextStep) {
-      navigate(nextStep);
-    }
   }
 
   const handleMapping = (type, payload) => {

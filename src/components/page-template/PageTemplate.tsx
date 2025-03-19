@@ -53,8 +53,8 @@ export const PageTemplate = ({ title, subTitle, validate, children, errorMsg}: P
       {errorMsg && renderErrorMsg()}
       {children}
       <div className="mt-4">
-        <button className={"border-black border-2 text-black me-3 bg-transparent c"} type={"submit"} onClick={() => navigate(getPreviousStep())}>Back</button>
-        <button className={"btn-success"} disabled={false} onClick={validate}>Next</button>
+        <button className={"border-black border-2 text-black me-3 bg-transparent c"} type={"submit"} onClick={() => navigate(getPreviousStep() || '/')}>Back</button>
+        <button className={"btn-success"} disabled={false} onClick={validate}>Save & Next</button>
       </div>
     </main>
   )
