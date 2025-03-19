@@ -61,7 +61,7 @@ const init = (state) => {
 
 
 export const SchedulingPage = () => {
-  const { updateData, onBoardingData, markStepAsCompleted, getNextStep } = useOnBoarding()
+  const { updateData, onBoardingData, markStepAsCompleted, getNextStep, updateOnboardingStep } = useOnBoarding()
   const navigate = useNavigate()
 
   const [errorMsg, setErrorMsg] = useState('');
@@ -76,12 +76,20 @@ export const SchedulingPage = () => {
   }, [invoiceScheduling, paymentScheduling, donationScheduling]);
 
   const handleSubmission = async () => {
-    await markStepAsCompleted("/job-scheduling");
 
-    const nextStep = getNextStep();
-    if (nextStep) {
-      navigate(nextStep);
+    try{
+      await updateOnboardingStep('/scheduling', { invoiceScheduling, donationScheduling, paymentScheduling })
+      await markStepAsCompleted("/job-scheduling");
+
+      const nextStep = getNextStep();
+      if (nextStep) {
+        navigate(nextStep);
+      }
     }
+    catch (e){
+      setErrorMsg(e.message || "Error updating scheduling data")
+    }
+
   }
 
   return (
