@@ -3,6 +3,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {userLogin, userRegister} from "../services/api/users-api/auth.ts";
 import {jwtDecode} from "jwt-decode";
+import {useOnBoarding} from "../hooks/useOnboarding.ts";
 
 export interface User {
   id: string;

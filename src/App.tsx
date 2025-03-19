@@ -24,10 +24,6 @@ import {RegistrationPage} from "./pages/auth/RegistrationPage.tsx";
 import {AuthContext, AuthProvider} from "./contexts/AuthContext.tsx";
 import {ProtectedRoute} from "./components/protected-onboarding-route/ProtectedRoute.tsx";
 
-//26aba993-f746-44bf-9378-e71a2ffae2e6
-// teamId: 740188, folderId = 220109
-//teamId: 740495, folderId = 246724
-export const folderId = 63437;
 function App() {
   return (
     <Router>
@@ -54,8 +50,8 @@ function App() {
                       <ProgressBar2 />
                     </div>
                     <Routes>
-                      <Route path="/" element={<CreatMakeAccountPage />} />
                       <Route path="/create-connections" element={<ProtectedOnboardingRoute><CreateConnectionsPage /></ProtectedOnboardingRoute>} />
+                      <Route path="/" element={<CreatMakeAccountPage />} />
                       <Route path="/customer-information" element={<ProtectedOnboardingRoute><CustomerInformationPage /></ProtectedOnboardingRoute>} />
                       <Route path="/invoice-config" element={<ProtectedOnboardingRoute><InvoiceConfigPage /></ProtectedOnboardingRoute>} />
                       <Route path="/oauth-success" element={<OAuthSuccess />} />

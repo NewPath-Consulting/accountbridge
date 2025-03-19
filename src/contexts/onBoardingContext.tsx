@@ -3,7 +3,7 @@ import httpClient, {AuthService} from "../services/httpClient.ts";
 import {ICustomerInfo} from "../pages/customer-info-page/CustomerInformationPage.tsx";
 import {IGeneralInformation} from "../pages/general-information-page/GeneralInformationPage.tsx";
 import {IStep, ONBOARDING_STEPS} from "../onboardingSteps.tsx";
-import {useLocation} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import {DonationFieldName, DonationMapping} from "../pages/donation-config-page/DonationConfigPage.tsx";
 import {InvoiceMapping} from "../pages/invoice-configuration-page/InvoiceConfigPage.tsx";
 import {Account} from "../pages/payment-config-page/PaymentConfigPage.tsx";
@@ -81,7 +81,8 @@ const getInitialOnboardingState = (): OnboardingState => {
 export const OnBoardingProvider = ({children}) => {
   const location = useLocation();
   const [isInitialized, setIsInitialized] = useState(false);
-  const [steps, setSteps] = useState<IStep[]>(ONBOARDING_STEPS)
+  const [steps, setSteps] = useState<IStep[]>(ONBOARDING_STEPS);
+  const navigate = useNavigate();
 
 
   const [onBoardingData, setOnBoardingData] = useState<OnboardingState>(getInitialOnboardingState);
@@ -106,6 +107,8 @@ export const OnBoardingProvider = ({children}) => {
       try{
         const response = await getOnboardingData()
         setOnBoardingData(prev => ({...prev, ...response.data}))
+
+
       }
       catch (e){
         throw new Error(e)

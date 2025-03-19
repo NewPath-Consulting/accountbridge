@@ -21,7 +21,6 @@ import {
 } from "./setParameters.ts";
 import {getConnections} from "../services/api/make-api/connectionsService.ts";
 import {createHook, getHooksFromSource} from "../services/api/make-api/hooksService.ts";
-import {folderId} from "../App.tsx";
 
 export const cloneConfiguration = async (data, teamId) => {
   // Track resources created to enable potential rollback

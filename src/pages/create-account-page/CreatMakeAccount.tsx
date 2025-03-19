@@ -83,8 +83,8 @@ export const CreatMakeAccountPage = () => {
   return (
     <main >
       <header>
-        <h2>Create a Make account</h2>
-        <p>Follow the steps below to create a Make account, then enter your credentials to continue.</p>
+        <h2>Introduction</h2>
+        <p>An overview of what is needed to be completed for this process.</p>
       </header>
 
       <div className="accordion" id="accordionExample">

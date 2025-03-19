@@ -19,8 +19,8 @@ export interface IStep {
 
 export const ONBOARDING_STEPS: IStep[] = [
   {
-    title: "Create Make account",
-    subTitle: "Sign up at Make.com",
+    title: "Introduction",
+    subTitle: "Overview of process",
     endpoint: "/",
   },
   {

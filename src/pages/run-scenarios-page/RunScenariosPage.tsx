@@ -8,7 +8,6 @@ import {
   getScenarios, getUserScenarios,
   runScenario
 } from "../../services/api/make-api/scenariosService.ts";
-import {folderId} from "../../App.tsx";
 import {useOnBoarding} from "../../hooks/useOnboarding.ts";
 
 interface ScenarioRun {
