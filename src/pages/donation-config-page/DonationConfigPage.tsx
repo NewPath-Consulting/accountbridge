@@ -62,7 +62,7 @@ export interface DonationFieldName {
 }
 
 export const DonationConfigPage = () => {
-  const { onBoardingData, updateData, markStepAsCompleted, getNextStep } = useOnBoarding();
+  const { onBoardingData, updateData, markStepAsCompleted, getNextStep, updateOnboardingStep } = useOnBoarding();
   const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
@@ -159,11 +159,18 @@ export const DonationConfigPage = () => {
   }, [errorMsg]);
 
   const handleSubmission = async () => {
-    await markStepAsCompleted("/donation-config");
-    const nextStep = getNextStep();
-    if (nextStep) {
-      navigate(nextStep);
+    try{
+      await updateOnboardingStep('/donation-config', { donationCampaign, donationComment, defaultDonationMapping, donationMappingList})
+      await markStepAsCompleted("/donation-config");
+      const nextStep = getNextStep();
+      if (nextStep) {
+        navigate(nextStep);
+      }
     }
+    catch (e){
+      setErrorMsg(e.message || "Cannot save donation mapping")
+    }
+
   }
 
   return (
