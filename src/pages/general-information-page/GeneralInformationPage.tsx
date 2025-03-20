@@ -105,6 +105,10 @@ export const GeneralInformationPage = () => {
       errors.push("QuickBooks url is not valid.")
     }
 
+    if(formData.toEmailAddresses.length !== new Set(formData.toEmailAddresses).size){
+      errors.push("Cannot input duplicate emails for input 'to email addresses'")
+    }
+
     return errors
   }
 
