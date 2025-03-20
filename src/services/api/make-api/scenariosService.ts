@@ -42,6 +42,10 @@ export const getScenarioDetails = async (scenarioId): Promise<AxiosResponse<Scen
   return httpClient.get(endpoints.makeApi.getScenarioDetails.replace(":scenarioId", scenarioId));
 }
 
+export const updateScenario = async (scenarioId, blueprint): Promise<AxiosResponse<IScenarioResponse>> => {
+  return httpClient.patch(endpoints.makeApi.updateScenario.replace(":scenarioId", scenarioId), { blueprint });
+}
+
 export const runScenario =  async (scenarioId) => {
   try{
     return httpClient.post(endpoints.makeApi.runScenarios.replace(":scenarioId", scenarioId), {responsive: true});

@@ -53,6 +53,18 @@ export const setDataStoreValue =(obj, dataStoreId) => {
   }
 }
 
+export const setHookUrl = (blueprint, hookUrl) => {
+  for (const key in blueprint) {
+    if (blueprint.hasOwnProperty(key)) {
+      if (key === "url" && blueprint[key].includes('hook')) {
+        blueprint[key] = hookUrl;
+      } else if (typeof blueprint[key] === "object" && blueprint[key] !== null) {
+        setHookUrl(blueprint[key], hookUrl); // Recurse into nested objects
+      }
+    }
+  }
+}
+
 export const getDataStoreValue =(obj, dataStoreId): number => {
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {

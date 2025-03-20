@@ -9,13 +9,13 @@ import {
   createScenario,
   deleteScenario,
   getScenarioBlueprint,
-  getScenarios
+  getScenarios, getUserScenarios, updateScenario
 } from "../services/api/make-api/scenariosService.ts";
 import {
   createCloneScenarioBody,
   setConnectionValue,
   setDataRecordKey,
-  setDataStoreValue,
+  setDataStoreValue, setHookUrl,
   setJSONValue,
   setWebhookValues
 } from "./setParameters.ts";
@@ -148,6 +148,8 @@ const postDataRecordStep = async (createdResources, data) => {
 const rollbackCreatedResources = async (createdResources, teamId) => {
   try {
     // Rollback scenarios
+    console.log("scenarios: " + JSON.stringify(createdResources))
+
     if (createdResources.scenarios.length) {
       await Promise.all(
         createdResources.scenarios.map(scenarioId => deleteScenario(String(scenarioId)))
@@ -183,6 +185,7 @@ const cloneScenarios = async (dataStructureMap, createdResources, teamId) => {
     const webhooksIdMap = new Map(); // Store original webhook ID → new webhook ID mapping
 
     const hooksResponse = await getHooksFromSource();
+    let hookUrl;
 
     // Create new webhooks for each reference found
     for (const webhookRef of hooksResponse.data) {
@@ -197,6 +200,7 @@ const cloneScenarios = async (dataStructureMap, createdResources, teamId) => {
           headers: false
         });
 
+        hookUrl = newWebhook.data.url;
         webhooksIdMap.set(webhookRef.id, newWebhook.data.id);
       }
     }
@@ -204,12 +208,17 @@ const cloneScenarios = async (dataStructureMap, createdResources, teamId) => {
 
     for (const scenario of scenarios.data) {
       try {
-        const blueprintResponse = await getScenarioBlueprint(scenario.id);
-        const blueprint = blueprintResponse.data.data;
         const clonedScenarioBody = createCloneScenarioBody(scenario, connections.data.data, webhooksIdMap, dataStructureMap, createdResources.dataStore, teamId)
-        console.log(scenario, clonedScenarioBody)
-        const clonedScenario = await cloneScenario(String(scenario.id), clonedScenarioBody)
+        const clonedScenario = await cloneScenario(String(scenario.id), clonedScenarioBody);
+
         createdResources.scenarios.push(clonedScenario.data.id);
+
+        const blueprintResponse = await getScenarioBlueprint(clonedScenario.data.id);
+        const blueprint = blueprintResponse.data.data;
+
+        setHookUrl(blueprint, hookUrl);
+        console.log(blueprint)
+        await updateScenario(clonedScenario.data.id, JSON.stringify(blueprint))
 
       }
       catch (e){
@@ -224,27 +233,4 @@ const cloneScenarios = async (dataStructureMap, createdResources, teamId) => {
   }
 }
 
-const extractWebhookReferences = (blueprint) => {
-  const webhookRefs = [];
-
-  const findWebhooks = (obj) => {
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        // Look for webhook identifiers in the blueprint structure
-        // This might be something like a "webhook" field or a specific pattern
-        if (key === "hook" && typeof obj[key] === "number") {
-          webhookRefs.push({
-            id: obj[key],
-            name: obj.name || `Webhook-${obj[key]}`
-          });
-        } else if (typeof obj[key] === "object" && obj[key] !== null) {
-          findWebhooks(obj[key]);
-        }
-      }
-    }
-  };
-
-  findWebhooks(blueprint);
-  return webhookRefs;
-};
 
