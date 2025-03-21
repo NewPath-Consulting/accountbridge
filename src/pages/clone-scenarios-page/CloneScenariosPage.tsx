@@ -112,7 +112,6 @@ export const CloneScenariosPage = () => {
     }
 
     else{
-      setErrorMsg('Must automate workflows before continuing!')
       await markStepAsCompleted("/clone-scenarios")
       const endpoint = getNextStep();
       if(endpoint){
