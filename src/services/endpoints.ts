@@ -50,6 +50,7 @@ const endpoints = {
     getFlow: "makeApi/instances/flow/:flowId",
     updateScenario: "makeApi/update-scenario/:scenarioId",
     getDataStores: "makeApi/data-stores",
+    getScenarioLogs: "makeApi/scenarios/:scenarioId/logs"
   },
   userApi: {
     login: "api/users/login",

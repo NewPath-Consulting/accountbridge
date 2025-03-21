@@ -131,7 +131,7 @@ export const GeneralInformationPage = () => {
 
   const handleAccountChange = (e) => {
     const orgName = WildApricotAccounts.find(account => account.Id == e.target.value);
-    setFormData({...formData, accountId: e.target.value, organizationName: orgName ?  orgName.Name : "", recordName: orgName ? `<${orgName.Name}>-<Master-Use>` : ""})
+    setFormData({...formData, accountId: e.target.value, organizationName: orgName ?  orgName.Name : "", recordName: orgName ? `${orgName.Name} - MASTER (USE)` : ""})
   }
 
   const handleToEmailAddressesChange = (e) => {
