@@ -4,9 +4,9 @@ import {IDataRecordBody, IDataStoreBody, IDataStructureBody} from "../../../typi
 import {AxiosResponse} from "axios";
 
 
-export const getDataStructures = async (): Promise<AxiosResponse<IDataStructureBody[]>> => {
+export const getDataStructures = async (teamId?): Promise<AxiosResponse<IDataStructureBody[]>> => {
 
-  return httpClient.get(endpoints.makeApi.listDataStructures)
+  return httpClient.get(endpoints.makeApi.listDataStructures, { params: { teamId }})
 }
 
 export const createDataStructure = async (body: IDataStructureBody) => {
@@ -40,5 +40,15 @@ export const deleteDataStore = async (ids: string[] , teamId: number) => {
 
 export const createDataRecord = async (body: IDataRecordBody) => {
   return httpClient.post(endpoints.makeApi.createDataRecord.replace(":dataStoreId", String(body.id)), body)
+}
+
+export const updateDataRecord = async (dataRecordKey, teamId, body) => {
+  try{
+    const response = await httpClient.get(endpoints.makeApi.getDataStores, { params: { teamId } })
+    return httpClient.patch(endpoints.makeApi.updateDataRecord.replace(":dataStoreId", response.data[0].id).replace(":dataStoreRecordKey", dataRecordKey), body)
+  }
+  catch(e){
+    throw e
+  }
 }
 

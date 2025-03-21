@@ -7,6 +7,9 @@ import './GeneralInformation.css'
 import {getWildApricotAccounts} from "../../services/api/wild-apricot-api/accountsService.ts";
 import {useNavigate} from "react-router-dom";
 import {configureQuickBooksUrl} from "../../services/api/quickbooks-api/accountService.ts";
+import {updateDataRecord} from "../../services/api/make-api/dataStructuresService.ts";
+import {configurations} from "../../configurations.ts";
+import {formatNotificationConfig, formatQBVersionInfo} from "../../utils/formatter.ts";
 
 export interface IGeneralInformation {
   organizationName: string,
@@ -63,6 +66,15 @@ export const GeneralInformationPage = () => {
       }
 
       await updateOnboardingStep('/general-info', {generalInfo: formData})
+      await updateDataRecord('ca72cb0afc44', onBoardingData.teamId, {
+        "Org Time Zone": onBoardingData.generalInfo.timeZone,
+        "WA Config Record Name": onBoardingData.generalInfo.recordName,
+        "WA Org Name": onBoardingData.generalInfo.organizationName,
+        ...configurations,
+        "Config Last Updated": new Date(),
+        ...formatQBVersionInfo(onBoardingData.generalInfo),
+        ...formatNotificationConfig(onBoardingData.generalInfo)
+      })
       await markStepAsCompleted("/general-information");
       const nextStep = getNextStep();
       if (nextStep) {

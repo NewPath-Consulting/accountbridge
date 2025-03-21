@@ -12,6 +12,9 @@ import {tableColumns} from "../../components/alternate-mapping-table/tableColumn
 import AlternateMappingTable from "../../components/alternate-mapping-table/AlternateMappingTable.tsx";
 import {invoiceTableReducer} from "../../hooks/tableReducer.ts";
 import {PageTemplate} from "../../components/page-template/PageTemplate.tsx";
+import {updateDataRecord} from "../../services/api/make-api/dataStructuresService.ts";
+import {formatCustomerInfo, formatInvoiceConfig} from "../../utils/formatter.ts";
+import {InvoiceConfiguration} from "../../typings/InvoiceConfiguration.ts";
 export interface InvoiceMapping {
   WAFieldName ?: string,
   QBProduct ?: string,
@@ -48,73 +51,104 @@ export const InvoiceConfigPage = () => {
 
   useEffect(() => {
 
-    Promise.all([
-      fetchData("select * from item", setProducts, "Item", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl),
-      fetchData("select * from account where AccountType = 'Accounts Receivable'", setAccountList, "Account", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl),
-      fetchData("select * from class", setClasses, "Class", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
-    ])
-
-    const fetchWithErrorHandling = async (
-      fetchFn: () => Promise<any>,
-      setter: (data: any[]) => void
-    ) => {
+    const fetchAllData = async () => {
       try {
-        const result = await fetchFn();
-        setter(result);
-      } catch (e) {
-        setter([]);
-        setErrorMsg(e.response.data.error);
+        // QB data fetching
+        await Promise.all([
+          fetchData("select * from item", setProducts, "Item", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl),
+          fetchData("select * from account where AccountType = 'Accounts Receivable'", setAccountList, "Account", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl),
+          fetchData("select * from class", setClasses, "Class", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
+        ]);
+
+        // WA data fetching
+        await Promise.all([
+          fetchWithErrorHandling(
+            async () => {
+              const response = await getMembershipLevels(onBoardingData.generalInfo.accountId || '221748');
+              return response.map(level => level.Name).sort((a, b) => a.localeCompare(b));
+            },
+            setMembershipLevels,
+            setErrorMsg
+          ),
+          fetchWithErrorHandling(
+            async () => {
+              const response = await getEventTags(onBoardingData.generalInfo.accountId);
+              return [...new Set(response.data.Events.map(event => event.Tags).flat())]
+                .sort((a, b) => a.localeCompare(b));
+            },
+            setEventTags,
+            setErrorMsg
+          ),
+          fetchWithErrorHandling(
+            async () => {
+              const response = await getProductTags(onBoardingData.generalInfo.accountId);
+              return [...new Set(response.data.map(productTag => productTag.Tags).flat())]
+                .sort((a, b) => a.localeCompare(b));
+            },
+            (data) => setProductTags((prev) => [...new Set([...prev, ...data])]),
+            setErrorMsg
+          )
+        ]);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setErrorMsg(error?.message || "Failed to fetch data");
       }
     };
 
-    // Fetch all WA data in parallel
-    Promise.all([
-      fetchWithErrorHandling(
-        async () => {
-          const response = await getMembershipLevels(onBoardingData.generalInfo.accountId || '221748');
-          return response.map(level => level.Name).sort((a, b) => a.localeCompare(b));
-        },
-        setMembershipLevels
-      ),
-      fetchWithErrorHandling(
-        async () => {
-          const response = await getEventTags(onBoardingData.generalInfo.accountId || '221748');
-          return [...new Set(response.data.Events.map(event => event.Tags).flat())]
-            .sort((a, b) => a.localeCompare(b));
-        },
-        setEventTags
-      ),
-      fetchWithErrorHandling(
-        async () => {
-          const response = await getProductTags(onBoardingData.generalInfo.accountId || '221748');
-          return [...new Set(response.data.map(productTag => productTag.Tags).flat())]
-            .sort((a, b) => a.localeCompare(b));
-        },
-        (data) => setProductTags((prev) => [...new Set([...prev, ...data])])
-      )
-    ]);
+    fetchAllData();
   }, []);
 
-  const invoiceConfigurations = useMemo(() => [
+  const fetchWithErrorHandling = async (
+    fetchFn: () => Promise<any>,
+    setter: (data: any[]) => void,
+    errorSetter: (error: string) => void
+  ) => {
+    try {
+      const result = await fetchFn();
+      setter(result);
+    } catch (e) {
+      setter([]);
+      console.log(e)
+      errorSetter(e.response?.data?.Message || "An error occurred");
+    }
+  };
+
+  const invoiceConfigurations: InvoiceConfiguration[] = useMemo(() => [
     {
-      invoiceOrderType: "Membership",
-      defaultInvoiceMapping: defaultMembershipProduct,
-      alternateInvoiceMapping: membershipLevelMappingList
+      invoiceOrderType: "MembershipApplication",
+      defaultInvoiceMapping: onBoardingData.defaultMembershipProduct,
+      alternateInvoiceMapping: onBoardingData.membershipLevelMappingList,
+      accountReceivable: onBoardingData.accountReceivable
     },
     {
-      invoiceOrderType: "Events",
-      defaultInvoiceMapping: defaultEventProduct,
-      alternateInvoiceMapping: eventMappingList
+      invoiceOrderType: "MembershipRenewal",
+      defaultInvoiceMapping: onBoardingData.defaultMembershipProduct,
+      alternateInvoiceMapping: onBoardingData.membershipLevelMappingList,
+      accountReceivable: onBoardingData.accountReceivable
     },
     {
-      invoiceOrderType: "Online Store",
-      defaultInvoiceMapping: defaultStoreProduct,
-      alternateInvoiceMapping: onlineStoreMappingList
+      invoiceOrderType: "MembershipLevelChange",
+      defaultInvoiceMapping: onBoardingData.defaultMembershipProduct,
+      alternateInvoiceMapping: onBoardingData.membershipLevelMappingList,
+      accountReceivable: onBoardingData.accountReceivable
     },
     {
-      invoiceOrderType: "Manual Invoice",
-      defaultInvoiceMapping: manualInvoiceMapping,
-      alternateInvoiceMapping: []
+      invoiceOrderType: "EventRegistration",
+      defaultInvoiceMapping: onBoardingData.defaultEventProduct,
+      alternateInvoiceMapping: onBoardingData.eventMappingList,
+      accountReceivable: onBoardingData.accountReceivable
+    },
+    {
+      invoiceOrderType: "OnlineStore",
+      defaultInvoiceMapping: onBoardingData.defaultStoreProduct,
+      alternateInvoiceMapping: onBoardingData.onlineStoreMappingList,
+      accountReceivable: onBoardingData.accountReceivable
+    },
+    {
+      invoiceOrderType: "Undefined",
+      defaultInvoiceMapping: onBoardingData.manualInvoiceMapping,
+      alternateInvoiceMapping: [],
+      accountReceivable: onBoardingData.accountReceivable
     }
   ], [
     defaultMembershipProduct,
@@ -128,7 +162,6 @@ export const InvoiceConfigPage = () => {
 
   const updateInvoiceData = useCallback(() => {
     updateData({
-      invoiceConfigurations,
       membershipLevelMappingList,
       eventMappingList,
       onlineStoreMappingList,
@@ -143,7 +176,6 @@ export const InvoiceConfigPage = () => {
     console.log(onBoardingData)
 
   }, [
-    invoiceConfigurations,
     membershipLevelMappingList,
     eventMappingList,
     onlineStoreMappingList,
@@ -236,6 +268,11 @@ export const InvoiceConfigPage = () => {
         eventMappingList,
         onlineStoreMappingList
       })
+
+      await updateDataRecord('ca72cb0afc44', onBoardingData.teamId, {
+          ...formatInvoiceConfig(invoiceConfigurations, onBoardingData.invoiceScheduling),
+      })
+
       await markStepAsCompleted("/invoice-config");
       const nextStep = getNextStep();
       if (nextStep) {

@@ -9,6 +9,8 @@ import {
   getWildApricotAccounts
 } from "../../services/api/wild-apricot-api/accountsService.ts";
 import {PageTemplate} from "../../components/page-template/PageTemplate.tsx";
+import {updateDataRecord} from "../../services/api/make-api/dataStructuresService.ts";
+import {formatCustomerInfo} from "../../utils/formatter.ts";
 
 export interface ICustomerInfo {
   firstName: string,
@@ -132,7 +134,10 @@ export const CustomerInformationPage = () => {
       //   console.log(onBoardingData);
       // }
       await updateOnboardingStep('/customer-info', {customerInfo: formData})
-      await markStepAsCompleted("/customer-information");
+      await updateDataRecord('ca72cb0afc44', onBoardingData.teamId, {
+        ...formatCustomerInfo(onBoardingData.customerInfo),
+      })
+        await markStepAsCompleted("/customer-information");
       const nextStep = getNextStep();
       if (nextStep) {
         navigate(nextStep);

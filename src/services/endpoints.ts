@@ -33,7 +33,7 @@ const endpoints = {
     listConnections: "makeApi/connections",
     createConnection: "makeApi/connections",
     verifyConnection: "makeApi/connections/:connectionId/test",
-    updateDataRecord: "makeApi/data-stores/:dataStoreId/data/:key",
+    updateDataRecord: "makeApi/data-stores/:dataStoreId/data/:dataStoreRecordKey",
     listOrganizations: "makeApi/organizations",
     listTeams: "makeApi/teams",
     OAuth: "makeApi/oauth/auth/:connectionId",
@@ -48,7 +48,8 @@ const endpoints = {
     cloneScenarios: "makeApi/scenarios/:scenarioId/clone",
     getTemplateUrl: "makeApi/instances/flow/init/template",
     getFlow: "makeApi/instances/flow/:flowId",
-    updateScenario: "makeApi/update-scenario/:scenarioId"
+    updateScenario: "makeApi/update-scenario/:scenarioId",
+    getDataStores: "makeApi/data-stores",
   },
   userApi: {
     login: "api/users/login",

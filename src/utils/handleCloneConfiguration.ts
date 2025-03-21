@@ -21,33 +21,21 @@ import {
 } from "./setParameters.ts";
 import {getConnections} from "../services/api/make-api/connectionsService.ts";
 import {createHook, getHooksFromSource} from "../services/api/make-api/hooksService.ts";
+import httpClient from "../services/httpClient.ts";
+import endpoints from "../services/endpoints.ts";
 
 export const cloneConfiguration = async (data, teamId) => {
   // Track resources created to enable potential rollback
   const createdResources = {
     dataStructures: [],
-    dataStore: null,
-    dataRecord: null,
     scenarios: []
   };
 
   try {
     // Step 1: Clone Data Structures
-    const { dataStructureMap, dataStructureId } = await cloneDataStructures(createdResources, teamId);
-    if (!dataStructureId) {
+    const { dataStructureMap } = await cloneDataStructures(createdResources, teamId);
+    if (!dataStructureMap.size) {
       throw new Error("Data Structure Cloning Failed");
-    }
-
-    // Step 2: Create Data Store
-    const dataStoreId = await createDataStoreStep(dataStructureId, createdResources, teamId);
-    if (!dataStoreId) {
-      throw new Error("Data Store Creation Failed");
-    }
-
-    // Step 3: Post Data Record
-    const dataRecordId = await postDataRecordStep(createdResources, data);
-    if (!dataRecordId) {
-      throw new Error("Data Record Creation Failed");
     }
 
     // Step 4: Clone Scenarios
@@ -59,7 +47,7 @@ export const cloneConfiguration = async (data, teamId) => {
 
     // Rollback mechanism
     try {
-      await rollbackCreatedResources(createdResources, teamId);
+      await rollbackCreatedResources(createdResources);
     } catch (rollbackError) {
       console.error("Rollback Failed:", rollbackError);
     }
@@ -70,56 +58,34 @@ export const cloneConfiguration = async (data, teamId) => {
 
 const cloneDataStructures = async (createdResources, teamId) => {
   const dataStructureMap = new Map();
-  let firstDataStructureId = null;
 
   try {
     const response = await getDataStructures();
+    const userResponse = await getDataStructures(teamId)
     const dataStructures = response.data
+    const userDataStructures = userResponse.data
 
-    for (let i = 0; i < 9; i++) {
-      try {
-        const dataStructureDetails = await createDataStructure({
-          spec: dataStructures[i].spec,
-          name: dataStructures[i].name,
-          teamId
-        });
+    for (const structure of dataStructures){
+      const userStructure = userDataStructures.find(userStructure => userStructure.name === structure.name)
 
-        // Track created data structure
-        createdResources.dataStructures.push(dataStructureDetails.data.dataStructure.id);
-
-        // Map old structure ID to new structure ID
-        dataStructureMap.set(dataStructures[i].id, dataStructureDetails.data.dataStructure.id);
-
-        // Keep track of first data structure ID
-        if (i === 0) {
-          firstDataStructureId = dataStructureDetails.data.dataStructure.id;
-        }
-      } catch (structureError) {
-        console.error(`Failed to clone data structure ${i}:`, structureError);
-        // Fail fast - stop entire process if any structure fails
-        throw structureError;
+      if(userStructure){
+        dataStructureMap.set(structure.id, userStructure.id)
       }
     }
 
-    return { dataStructureMap, dataStructureId: firstDataStructureId };
+    return { dataStructureMap };
   } catch (error) {
-    console.error("Data Structures Cloning Failed:", error);
     throw error;
   }
 };
 
 const createDataStoreStep = async (dataStructureId, createdResources, teamId) => {
   try {
-    const dataStoreResponse = await createDataStore({
-      datastructureId: dataStructureId,
-      name: 'QBWA Test',
-      teamId: teamId
-    });
+    const dataStoreResponse = await httpClient.get(endpoints.makeApi.getDataStores, { params: { teamId } })
 
-    // Track created data store
-    createdResources.dataStore = dataStoreResponse.data.dataStore.id;
+    createdResources.dataStore = dataStoreResponse.data[0].id;
 
-    return dataStoreResponse.data.dataStore.id;
+    return dataStoreResponse.data[0].id;
   } catch (error) {
     console.error("Data Store Creation Failed:", error);
     throw error;
@@ -145,7 +111,7 @@ const postDataRecordStep = async (createdResources, data) => {
 };
 
 
-const rollbackCreatedResources = async (createdResources, teamId) => {
+const rollbackCreatedResources = async (createdResources) => {
   try {
     // Rollback scenarios
     console.log("scenarios: " + JSON.stringify(createdResources))
@@ -153,19 +119,6 @@ const rollbackCreatedResources = async (createdResources, teamId) => {
     if (createdResources.scenarios.length) {
       await Promise.all(
         createdResources.scenarios.map(scenarioId => deleteScenario(String(scenarioId)))
-      );
-    }
-
-
-    // Rollback data store
-    if (createdResources.dataStore) {
-      await deleteDataStore([String(createdResources.dataStore)], teamId);
-    }
-
-    // Rollback data structures
-    if (createdResources.dataStructures.length) {
-      await Promise.all(
-        createdResources.dataStructures.map(structureId => deleteDataStructure(String(structureId)))
       );
     }
   } catch (rollbackError) {
@@ -183,6 +136,8 @@ const cloneScenarios = async (dataStructureMap, createdResources, teamId) => {
     scenarios.data.sort((a, b) => b.hookId - a.hookId)
     const connections = await getConnections(teamId)
     const webhooksIdMap = new Map(); // Store original webhook ID → new webhook ID mapping
+    const dataStoreResponse = await httpClient.get(endpoints.makeApi.getDataStores, { params: { teamId } })
+
 
     const hooksResponse = await getHooksFromSource();
     let hookUrl;
@@ -208,7 +163,7 @@ const cloneScenarios = async (dataStructureMap, createdResources, teamId) => {
 
     for (const scenario of scenarios.data) {
       try {
-        const clonedScenarioBody = createCloneScenarioBody(scenario, connections.data.data, webhooksIdMap, dataStructureMap, createdResources.dataStore, teamId)
+        const clonedScenarioBody = createCloneScenarioBody(scenario, connections.data.data, webhooksIdMap, dataStructureMap, dataStoreResponse.data[0].id, teamId)
         const clonedScenario = await cloneScenario(String(scenario.id), clonedScenarioBody);
 
         createdResources.scenarios.push(clonedScenario.data.id);

@@ -34,6 +34,7 @@ export const formatQBVersionInfo = (generalInfo: IGeneralInformation) => {
     }
   }
 }
+
 export const formatCustomerInfo = (customerInfo: ICustomerInfo) => {
   return {
     "Customer Field Config": {
@@ -56,7 +57,7 @@ export const formatCustomerInfo = (customerInfo: ICustomerInfo) => {
   };
 }
 
-export const formatPaymentConfig = (paymentConfig: PaymentConfig[], accountReceivable: Account, depositAccount: Account, schedulingData: SchedulingData) => {
+export const formatPaymentConfig = (paymentConfig: PaymentConfig[], accountReceivable: Account, depositAccount: Account, schedulingData: SchedulingData | null) => {
 
   return {
     "Payment Config": {
@@ -101,7 +102,7 @@ interface DonationConfig {
   alternateDonationConfig: DonationMapping[]
 }
 
-export const formatDonationConfig = (donationConfig: DonationConfig, schedulingData: SchedulingData) => {
+export const formatDonationConfig = (donationConfig: DonationConfig, schedulingData: SchedulingData | null) => {
 
   return {
     "Donation Config": {
@@ -156,7 +157,7 @@ export const formatDonationConfig = (donationConfig: DonationConfig, schedulingD
   }
 }
 
-export const formatInvoiceConfig = (invoiceConfig: InvoiceConfiguration[], schedulingData: SchedulingData) => {
+export const formatInvoiceConfig = (invoiceConfig: InvoiceConfiguration[], schedulingData: SchedulingData | null) => {
 
   return {
     "Invoice Config": {
@@ -252,8 +253,8 @@ export const formatDataRecord = (onBoardingData, invoiceConfigurations: InvoiceC
     ...formatDonationConfig({
       defaultDonationConfig: onBoardingData.defaultDonationMapping,
       alternateDonationConfig: onBoardingData.donationMappingList,
-      commentName: onBoardingData.donationCommentName,
-      campaignName: onBoardingData.donationCampaignName
+      commentName: onBoardingData.donationComment,
+      campaignName: onBoardingData.donationCampaign
     }, onBoardingData.donationScheduling),
     ...formatInvoiceConfig(invoiceConfigurations, onBoardingData.invoiceScheduling),
     ...formatNotificationConfig(onBoardingData.generalInfo)

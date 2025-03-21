@@ -6,6 +6,14 @@ import {PageTemplate} from "../../components/page-template/PageTemplate.tsx";
 import './Scheduling.css'
 import {SchedulingComponent} from "../../components/scheduling-component/SchedulingComponent.tsx";
 import {toast} from "react-toastify";
+import {InvoiceConfiguration} from "../../typings/InvoiceConfiguration.ts";
+import {updateDataRecord} from "../../services/api/make-api/dataStructuresService.ts";
+import {
+  formatCustomerInfo,
+  formatDonationConfig,
+  formatInvoiceConfig,
+  formatPaymentConfig
+} from "../../utils/formatter.ts";
 
 export interface ManualSchedule {
   startDate: string,
@@ -70,6 +78,44 @@ export const SchedulingPage = () => {
   const [paymentScheduling, dispatchPayment] = useReducer(schedulingReducer, onBoardingData.paymentScheduling ?? initialState, init);
   const [donationScheduling, dispatchDonation] = useReducer(schedulingReducer, onBoardingData.donationScheduling ?? initialState, init);
 
+  const invoiceConfigurations: InvoiceConfiguration[] = [
+    {
+      invoiceOrderType: "MembershipApplication",
+      defaultInvoiceMapping: onBoardingData.defaultMembershipProduct,
+      alternateInvoiceMapping: onBoardingData.membershipLevelMappingList,
+      accountReceivable: onBoardingData.accountReceivable
+    },
+    {
+      invoiceOrderType: "MembershipRenewal",
+      defaultInvoiceMapping: onBoardingData.defaultMembershipProduct,
+      alternateInvoiceMapping: onBoardingData.membershipLevelMappingList,
+      accountReceivable: onBoardingData.accountReceivable
+    },
+    {
+      invoiceOrderType: "MembershipLevelChange",
+      defaultInvoiceMapping: onBoardingData.defaultMembershipProduct,
+      alternateInvoiceMapping: onBoardingData.membershipLevelMappingList,
+      accountReceivable: onBoardingData.accountReceivable
+    },
+    {
+      invoiceOrderType: "EventRegistration",
+      defaultInvoiceMapping: onBoardingData.defaultEventProduct,
+      alternateInvoiceMapping: onBoardingData.eventMappingList,
+      accountReceivable: onBoardingData.accountReceivable
+    },
+    {
+      invoiceOrderType: "OnlineStore",
+      defaultInvoiceMapping: onBoardingData.defaultStoreProduct,
+      alternateInvoiceMapping: onBoardingData.onlineStoreMappingList,
+      accountReceivable: onBoardingData.accountReceivable
+    },
+    {
+      invoiceOrderType: "Undefined",
+      defaultInvoiceMapping: onBoardingData.manualInvoiceMapping,
+      alternateInvoiceMapping: [],
+      accountReceivable: onBoardingData.accountReceivable
+    }
+  ]
 
   useEffect(() => {
     updateData({ invoiceScheduling, paymentScheduling, donationScheduling})
@@ -79,6 +125,18 @@ export const SchedulingPage = () => {
 
     try{
       await updateOnboardingStep('/scheduling', { invoiceScheduling, donationScheduling, paymentScheduling })
+
+      await updateDataRecord('ca72cb0afc44', onBoardingData.teamId, {
+        ...formatCustomerInfo(onBoardingData.customerInfo),
+        ...formatPaymentConfig(onBoardingData.paymentMappingList, onBoardingData.accountReceivable, onBoardingData.qbDepositAccount, onBoardingData.paymentScheduling),
+        ...formatDonationConfig({
+          defaultDonationConfig: onBoardingData.defaultDonationMapping,
+          alternateDonationConfig: onBoardingData.donationMappingList,
+          commentName: onBoardingData.donationComment,
+          campaignName: onBoardingData.donationCampaign
+        }, onBoardingData.donationScheduling),
+        ...formatInvoiceConfig(invoiceConfigurations, onBoardingData.invoiceScheduling)
+      })
       await markStepAsCompleted("/job-scheduling");
 
       const nextStep = getNextStep();

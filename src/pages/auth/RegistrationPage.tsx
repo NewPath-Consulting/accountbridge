@@ -66,7 +66,7 @@ export const RegistrationPage = () => {
 
               <div className="align">
                 <label htmlFor="name" className="form-label">
-                  Full Name
+                  Company Name
                 </label>
                 <input
                   id="name"

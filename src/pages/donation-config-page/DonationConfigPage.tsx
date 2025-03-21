@@ -14,6 +14,8 @@ import {tableColumns} from "../../components/alternate-mapping-table/tableColumn
 import {donationTableReducer} from "../../hooks/tableReducer.ts";
 import {PageTemplate} from "../../components/page-template/PageTemplate.tsx";
 import {useToast} from "react-toastify";
+import {updateDataRecord} from "../../services/api/make-api/dataStructuresService.ts";
+import {formatDonationConfig, formatInvoiceConfig} from "../../utils/formatter.ts";
 
 export interface DonationMapping extends InvoiceMapping {
   depositAccount: string,
@@ -161,6 +163,15 @@ export const DonationConfigPage = () => {
   const handleSubmission = async () => {
     try{
       await updateOnboardingStep('/donation-config', { donationCampaign, donationComment, defaultDonationMapping, donationMappingList})
+      await updateDataRecord('ca72cb0afc44', onBoardingData.teamId, {
+        ...formatDonationConfig({
+          defaultDonationConfig: onBoardingData.defaultDonationMapping,
+          alternateDonationConfig: onBoardingData.donationMappingList,
+          commentName: onBoardingData.donationComment,
+          campaignName: onBoardingData.donationCampaign,
+        }, onBoardingData.donationScheduling)
+      })
+
       await markStepAsCompleted("/donation-config");
       const nextStep = getNextStep();
       if (nextStep) {
