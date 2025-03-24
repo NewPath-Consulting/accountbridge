@@ -57,6 +57,9 @@ const endpoints = {
     register: "api/users/register",
     getOnboardingData: "api/users/onboarding-data",
     updateOnboardingStep: "api/users/onboarding-step"
+  },
+  generateMappingsApi: {
+    generateCustomerInfo: "api/generate-mapping/customer-info"
   }
 };
 

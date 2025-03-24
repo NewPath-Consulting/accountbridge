@@ -5,12 +5,13 @@ import * as React from "react";
 import {useNavigate} from "react-router-dom";
 import {
   getContactFields,
-  getContactInfo,
   getWildApricotAccounts
 } from "../../services/api/wild-apricot-api/accountsService.ts";
 import {PageTemplate} from "../../components/page-template/PageTemplate.tsx";
 import {updateDataRecord} from "../../services/api/make-api/dataStructuresService.ts";
 import {formatCustomerInfo} from "../../utils/formatter.ts";
+import {generateCustomerInformationMapping} from "../../services/api/generate-mapping-api/generateMapping.ts";
+import {BlurryOverlay} from "../../components/cloning-animation/BlurryOverlay.tsx";
 
 export interface ICustomerInfo {
   firstName: string,
@@ -31,6 +32,7 @@ export const CustomerInformationPage = () => {
   const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState("");
   const [fieldNames, setFieldNames] = useState([]);
+  const [isGenerateMappingLoading, setIsGenerateMappingLoading] = useState(false)
 
   const [formData, setFormData] = useState<ICustomerInfo>({
     city: "",
@@ -87,6 +89,24 @@ export const CustomerInformationPage = () => {
 
   }, []);
 
+  const generateMapping = async () => {
+    try{
+      setErrorMsg('')
+      setIsGenerateMappingLoading(true)
+      const response = await generateCustomerInformationMapping(fieldNames.map(name => name.FieldName).toString())
+
+      const { message } = response.data
+
+      setFormData(prev => ({...prev, ...message}))
+    }
+    catch (e){
+      setErrorMsg(e.response.data.message || "Error mapping with AI")
+    }
+    finally {
+      setIsGenerateMappingLoading(false)
+    }
+  }
+
   const validateForm = () => {
     const errors: ICustomerInfo = {
       address: "",
@@ -117,11 +137,11 @@ export const CustomerInformationPage = () => {
 
   useEffect(() => {
     updateData({customerInfo: formData});
+    console.log(fieldNames.map(name => name.FieldName))
   }, [formData]);
 
   const handleSubmit = async () => {
     try{
-      console.log(onBoardingData)
       // const errors = validateForm();
       // if (Object.values(errors).some(value => value.trim() !== "")) {
       //   setFormErrors(errors);
@@ -133,11 +153,13 @@ export const CustomerInformationPage = () => {
       //   navigate("/invoice-config")
       //   console.log(onBoardingData);
       // }
+
       await updateOnboardingStep('/customer-info', {customerInfo: formData})
       await updateDataRecord('ca72cb0afc44', onBoardingData.teamId, {
         ...formatCustomerInfo(onBoardingData.customerInfo),
       })
-        await markStepAsCompleted("/customer-information");
+
+      await markStepAsCompleted("/customer-information");
       const nextStep = getNextStep();
       if (nextStep) {
         navigate(nextStep);
@@ -168,8 +190,15 @@ export const CustomerInformationPage = () => {
       validate={handleSubmit}
       errorMsg={errorMsg}
     >
+      <BlurryOverlay isLoading={isGenerateMappingLoading} message={isGenerateMappingLoading ? `Currently Mapping your Customer Information Fields. ` : errorMsg ? "Error Occurred!" : "Mapping Completed!"} icon={"stars"} subtitle={"Please wait while our system maps your field names ..."}/>
       <div>
-        <h5 className={'mb-4'}>Wild Apricot Information</h5>
+        <div className={'d-flex justify-content-between align-items-center'}>
+          <h5 className={'mb-4'}>Wild Apricot Information</h5>
+          <button className={"ai-btn"} onClick={generateMapping}>
+            <i className={'bi bi-stars'} style={{color: 'black'}}></i>
+            Map with AI
+          </button>
+        </div>
         <div className={"form-content"}>
           <div className="row ">
             <div className="col-md-6 mb-3">
