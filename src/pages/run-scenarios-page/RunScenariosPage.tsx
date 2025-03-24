@@ -4,11 +4,11 @@ import {Clock, CheckCircle, AlertCircle, RotateCw, PlayCircle, ClipboardCheck, C
 import './RunScenarios.css'
 import {
   activateScenario,
-  getScenarioDetails,
+  getScenarioDetails, getScenarioLogs,
   getScenarios, getUserScenarios,
   runScenario
 } from "../../services/api/make-api/scenariosService.ts";
-import {folderId, teamId} from "../../App.tsx";
+import {useOnBoarding} from "../../hooks/useOnboarding.ts";
 
 interface ScenarioRun {
   scenarioId: number,
@@ -26,6 +26,7 @@ interface ScenarioRun {
 export const RunScenariosPage = () => {
   const [errorMsg, setErrorMsg] = useState<string | string[]>('')
   const [scenarios, setScenarios] = useState<ScenarioRun[]>([]);
+  const { onBoardingData } = useOnBoarding()
 
   const handleSubmission = () => {
 
@@ -34,9 +35,11 @@ export const RunScenariosPage = () => {
   useEffect(() => {
     const listScenarios = async() => {
       try {
-        const response = await getUserScenarios(teamId, folderId )
+        const response = await getUserScenarios(onBoardingData.teamId)
 
-        const scenarios: ScenarioRun[] = response.data.map((scenario, index) => {
+        const scenarios: ScenarioRun[] = []
+
+        for(const scenario of response.data){
           let subtitle;
 
           if(scenario.name.toLowerCase().includes('donation')) {
@@ -52,18 +55,20 @@ export const RunScenariosPage = () => {
             subtitle = "Configure this workflow"
           }
 
-          return {
+          const logResponse = await getScenarioLogs(scenario.id)
+
+          scenarios.push({
             scenarioId: scenario.id,
-            numOfRuns: 0,
-            lastRun: null,
-            isCompleted: false,
-            isSuccessful: false,
+            numOfRuns: logResponse.data.filter(log => log.type == "manual" || log.type == "auto" || log.type == "start").length || 0,
+            lastRun: logResponse.data.find(log => log.type == "manual" || log.type == "auto" || log.type == "start")?.timestamp || null,
+            isCompleted: logResponse.data[0].type == 'manual' || logResponse.data[0].type == 'auto' || logResponse.data[0].type == 'start',
+            isSuccessful: logResponse.data.find(log => log.type == "manual" || log.type == "auto" || log.type == "start")?.status !== 3 ,
             subtitle,
             title: scenario.name,
             isRunning: false,
-            runDuration: 0
-          }
-        })
+            runDuration: Math.ceil(logResponse.data[0]?.duration/1000)
+          })
+        }
 
         setScenarios(scenarios)
       } catch (error) {
@@ -127,6 +132,7 @@ export const RunScenariosPage = () => {
       }
     }
     catch(e){
+      console.log(e)
       setErrorMsg(e.response.data.error)
     }
     finally {

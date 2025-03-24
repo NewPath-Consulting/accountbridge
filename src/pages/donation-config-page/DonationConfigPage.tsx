@@ -13,6 +13,9 @@ import AlternateMappingTable from "../../components/alternate-mapping-table/Alte
 import {tableColumns} from "../../components/alternate-mapping-table/tableColumns.ts";
 import {donationTableReducer} from "../../hooks/tableReducer.ts";
 import {PageTemplate} from "../../components/page-template/PageTemplate.tsx";
+import {useToast} from "react-toastify";
+import {updateDataRecord} from "../../services/api/make-api/dataStructuresService.ts";
+import {formatDonationConfig, formatInvoiceConfig} from "../../utils/formatter.ts";
 
 export interface DonationMapping extends InvoiceMapping {
   depositAccount: string,
@@ -58,28 +61,20 @@ const ExtendedMappingTable = (props: DepositDefaultMappingProps) => {
 export interface DonationFieldName {
   Id: string,
   FieldName: string,
-  AllowedValues: {Id: number, Label: string, Value: number}[]
 }
 
 export const DonationConfigPage = () => {
-  const { onBoardingData, updateData, markStepAsCompleted, getNextStep } = useOnBoarding();
+  const { onBoardingData, updateData, markStepAsCompleted, getNextStep, updateOnboardingStep } = useOnBoarding();
   const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [classes, setClasses] = useState([]);
   const [accountList, setAccountList] = useState([]);
   const [donationFields, setDonationFields] = useState([]);
-  const [donationCampaignName, setDonationCampaignName] = useState<DonationFieldName>(onBoardingData.donationCampaignName ??{
-    AllowedValues: [],
-    FieldName: "",
-    Id: ""
-  })
+  const [donationCampaign, setDonationCampaign] = useState(onBoardingData.donationCampaign ?? {Id: "", FieldName: ""})
+  const [donationComment, setDonationComment] = useState(onBoardingData.donationComment ?? {Id: "", FieldName: ""})
 
-  const [donationCommentName, setDonationCommentName] = useState<DonationFieldName>(onBoardingData.donationCommentName ??{
-    AllowedValues: [],
-    FieldName: "",
-    Id: ""
-  })
+  const [campaignList, setCampaignList] = useState([]);
 
   const [defaultDonationMapping, setDefaultDonationMapping] = useState<DonationMapping>(onBoardingData.defaultDonationMapping ?? {
     depositAccount: "",
@@ -96,9 +91,11 @@ export const DonationConfigPage = () => {
   const errorRef = useRef(null)
 
   useEffect(() => {
-    fetchData("select * from item", setProducts, "Item", setErrorMsg)
-    fetchData("select * from class", setClasses, "Class", setErrorMsg)
-    fetchData("select * from account where AccountType = 'Bank'", setAccountList, "Account", setErrorMsg)
+    fetchData("select * from item", setProducts, "Item", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
+    fetchData("select * from class", setClasses, "Class", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
+    fetchData("select * from account where AccountType = 'Bank'", setAccountList, "Account", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
+
+
 
     const listDonationFields = async () => {
       try{
@@ -111,9 +108,27 @@ export const DonationConfigPage = () => {
       }
     }
 
-    listDonationFields();
+    listDonationFields()
 
   }, []);
+
+
+  useEffect(() => {
+    const donationCampaignObj = donationFields.find(field => field.Id == donationCampaign.Id) ?? {
+      AllowedValues: [],
+      FieldName: "",
+      Id: ""
+    };
+
+    console.log(donationCampaign.Id, donationFields)
+
+    setCampaignList(donationCampaignObj.AllowedValues.filter(({Label}) => {
+      return Label != null
+    }).map(val => {
+      return val
+    }));
+
+  }, [donationCampaign, donationFields]);
 
   const handleChange = (fields) => {
     setDefaultDonationMapping(prev => ({
@@ -125,27 +140,19 @@ export const DonationConfigPage = () => {
   }
 
   const handleFieldNameChange = (e, fieldName) => {
-    const donationObj = donationFields.find(field => field.Id == e.target.value)?? {
+
+    const donationObj = donationFields.find(field => field.Id == e.target.value) ?? {
       AllowedValues: [],
       FieldName: "",
       Id: ""
     };
 
-    donationObj.AllowedValues = donationObj.AllowedValues.filter(({Label}) => {
-      console.log(Label)
-      return Label != null
-    }).map(val => {
-      return val
-    });
-
-    (fieldName === 'campaign' ? setDonationCampaignName : setDonationCommentName)(donationObj);
-
-    console.log(donationObj)
+    (fieldName === 'campaign' ? setDonationCampaign : setDonationComment)(donationObj);
   };
 
   useEffect(() => {
-    updateData({donationMappingList, defaultDonationMapping, donationCampaignName, donationCommentName})
-  }, [donationMappingList, defaultDonationMapping, donationCampaignName, donationCommentName]);
+    updateData({donationMappingList, defaultDonationMapping, donationComment, donationCampaign})
+  }, [donationMappingList, defaultDonationMapping, donationComment, donationCampaign]);
 
   useEffect(() => {
     if (errorMsg && errorRef.current) {
@@ -153,12 +160,28 @@ export const DonationConfigPage = () => {
     }
   }, [errorMsg]);
 
-  const handleSubmission = () => {
-    markStepAsCompleted('/donation-config');
-    const nextStep = getNextStep();
-    if (nextStep) {
-      navigate(nextStep);
+  const handleSubmission = async () => {
+    try{
+      await updateOnboardingStep('/donation-config', { donationCampaign, donationComment, defaultDonationMapping, donationMappingList})
+      await updateDataRecord('ca72cb0afc44', onBoardingData.teamId, {
+        ...formatDonationConfig({
+          defaultDonationConfig: onBoardingData.defaultDonationMapping,
+          alternateDonationConfig: onBoardingData.donationMappingList,
+          commentName: onBoardingData.donationComment,
+          campaignName: onBoardingData.donationCampaign,
+        }, onBoardingData.donationScheduling)
+      })
+
+      await markStepAsCompleted("/donation-config");
+      const nextStep = getNextStep();
+      if (nextStep) {
+        navigate(nextStep);
+      }
     }
+    catch (e){
+      setErrorMsg(e.message || "Cannot save donation mapping")
+    }
+
   }
 
   return (
@@ -177,7 +200,7 @@ export const DonationConfigPage = () => {
             <select
               className="form-select"
               id={`wa-campaign`}
-              value={donationCampaignName.Id || ""}
+              value={donationCampaign.Id || ""}
               onChange={(e) => handleFieldNameChange(e, "campaign")}
             >
               <option value="">
@@ -194,7 +217,7 @@ export const DonationConfigPage = () => {
             <select
               className="form-select"
               id={`wa-comment`}
-              value={donationCommentName.Id || ""}
+              value={donationComment.Id || ""}
               onChange={(e) => handleFieldNameChange(e, "comment")}
             >
               <option value="">
@@ -220,7 +243,7 @@ export const DonationConfigPage = () => {
         <div className={'default-donation-table'}>
           <h6>Donation Mapping</h6>
           <p className={'mb-3 mt-2'}>Choose your QuickBooks fields below where default mapping will occur</p>
-          <AlternateMappingTable columns={[...tableColumns.donations, ...(onBoardingData.hasClasses ? tableColumns.classes : [])]} data={{accountList, products, campaignOptions: donationCampaignName.AllowedValues.map(val => val.Label), classes}} mappingData={donationMappingList} onMappingChange={(type, payload) => dispatchDonationMappingList({type, payload})}/>
+          <AlternateMappingTable columns={[...tableColumns.donations, ...(onBoardingData.hasClasses ? tableColumns.classes : [])]} data={{accountList, products, campaignOptions: campaignList.map(val => val.Label), classes}} mappingData={donationMappingList} onMappingChange={(type, payload) => dispatchDonationMappingList({type, payload})}/>
         </div>
       </div>
     </PageTemplate>

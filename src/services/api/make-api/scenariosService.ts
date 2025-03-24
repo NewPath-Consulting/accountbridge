@@ -14,15 +14,23 @@ interface ScenarioDetailsResponse {
   name: string,
   isActive: boolean,
   teamId: string,
+}
 
+interface ScenarioLog {
+  duration: number,
+  id: string,
+  timestamp: string,
+  status: number,
+  operations: number,
+  type: string
 }
 
 export const getScenarios = async (): Promise<AxiosResponse<IScenarioResponse[]>> => {
   return httpClient.get(endpoints.makeApi.listScenarios)
 }
 
-export const getUserScenarios = async (teamId: number, folderId: number): Promise<AxiosResponse<IScenarioResponse[]>> => {
-  const params = {teamId, folderId}
+export const getUserScenarios = async (teamId: number): Promise<AxiosResponse<IScenarioResponse[]>> => {
+  const params = {teamId}
   return httpClient.get(endpoints.makeApi.listScenarios, {params})
 }
 
@@ -42,6 +50,10 @@ export const getScenarioDetails = async (scenarioId): Promise<AxiosResponse<Scen
   return httpClient.get(endpoints.makeApi.getScenarioDetails.replace(":scenarioId", scenarioId));
 }
 
+export const updateScenario = async (scenarioId, blueprint): Promise<AxiosResponse<IScenarioResponse>> => {
+  return httpClient.patch(endpoints.makeApi.updateScenario.replace(":scenarioId", scenarioId), { blueprint });
+}
+
 export const runScenario =  async (scenarioId) => {
   try{
     return httpClient.post(endpoints.makeApi.runScenarios.replace(":scenarioId", scenarioId), {responsive: true});
@@ -58,5 +70,13 @@ export const activateScenario =  async (scenarioId): Promise<AxiosResponse<Activ
   catch(e){
     console.log(e)
   }
+}
+
+export const cloneScenario = async (scenarioId: string, body: any) => {
+  return httpClient.post(endpoints.makeApi.cloneScenarios.replace(":scenarioId", scenarioId), body)
+}
+
+export const getScenarioLogs = async (scenarioId): Promise<AxiosResponse<ScenarioLog[]>> => {
+  return httpClient.get(endpoints.makeApi.getScenarioLogs.replace(":scenarioId", scenarioId));
 }
 

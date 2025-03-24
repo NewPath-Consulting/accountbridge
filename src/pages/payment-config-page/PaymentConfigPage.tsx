@@ -8,6 +8,8 @@ import {fetchData} from "../../services/fetchData.ts";
 import AlternateMappingTable from "../../components/alternate-mapping-table/AlternateMappingTable.tsx";
 import {tableColumns} from "../../components/alternate-mapping-table/tableColumns.ts";
 import {PageTemplate} from "../../components/page-template/PageTemplate.tsx";
+import {updateDataRecord} from "../../services/api/make-api/dataStructuresService.ts";
+import {formatInvoiceConfig, formatPaymentConfig} from "../../utils/formatter.ts";
 
 export interface PaymentConfig {
   WATender: string,
@@ -44,7 +46,7 @@ const reducer = (state, action) => {
 }
 
 export const PaymentConfigPage = () => {
-  const { onBoardingData, updateData, getNextStep, markStepAsCompleted } = useOnBoarding();
+  const { onBoardingData, updateData, getNextStep, markStepAsCompleted, updateOnboardingStep } = useOnBoarding();
 
   const [errorMsg, setErrorMsg] = useState<string | string[]>('');
   const [qbPaymentMethods, setQBPaymentMethods] = useState([]);
@@ -59,8 +61,8 @@ export const PaymentConfigPage = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    fetchData("select * from paymentmethod", setQBPaymentMethods, "PaymentMethod", setErrorMsg)
-    fetchData("select * from account where AccountType IN ('Other Current Asset', 'Bank')", setDepositAccountsList, "Account", setErrorMsg)
+    fetchData("select * from paymentmethod", setQBPaymentMethods, "PaymentMethod", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
+    fetchData("select * from account where AccountType IN ('Other Current Asset', 'Bank')", setDepositAccountsList, "Account", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
 
     const listTenders = async () => {
       try{
@@ -83,20 +85,31 @@ export const PaymentConfigPage = () => {
     });
   }, [paymentMappingList, qbDepositAccount]);
 
-  const handleSubmission = () => {
+  const handleSubmission = async () => {
 
-    const errors = validateConfig();
+    try{
+      const errors = validateConfig();
 
-    if(errors.length > 0){
-      setErrorMsg(errors)
-      return
+      if(errors.length > 0){
+        setErrorMsg(errors)
+        return
+      }
+
+      await updateOnboardingStep('/payment-config', { paymentMappingList, qbDepositAccount})
+      await updateDataRecord('ca72cb0afc44', onBoardingData.teamId, {
+        ...formatPaymentConfig(onBoardingData.paymentMappingList, onBoardingData.accountReceivable, onBoardingData.qbDepositAccount, onBoardingData.paymentScheduling),
+      })
+
+      await markStepAsCompleted("/payment-config");
+      const nextStep = getNextStep();
+      if (nextStep) {
+        navigate(nextStep);
+      }
+    }
+    catch (e){
+      setErrorMsg(e.message || "Cannot save payment mappings")
     }
 
-    markStepAsCompleted('/payment-config');
-    const nextStep = getNextStep();
-    if (nextStep) {
-      navigate(nextStep);
-    }
   }
 
   const handleMapping = (type, payload) => {

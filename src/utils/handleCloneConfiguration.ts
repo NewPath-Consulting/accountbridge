@@ -5,52 +5,49 @@ import {
   getDataStructures
 } from "../services/api/make-api/dataStructuresService.ts";
 import {
+  cloneScenario,
   createScenario,
   deleteScenario,
   getScenarioBlueprint,
-  getScenarios
+  getScenarios, getUserScenarios, updateScenario
 } from "../services/api/make-api/scenariosService.ts";
 import {
+  createCloneScenarioBody,
   setConnectionValue,
   setDataRecordKey,
-  setDataStoreValue,
+  setDataStoreValue, setHookUrl,
   setJSONValue,
   setWebhookValues
 } from "./setParameters.ts";
 import {getConnections} from "../services/api/make-api/connectionsService.ts";
 import {createHook, getHooksFromSource} from "../services/api/make-api/hooksService.ts";
-import {folderId, teamId} from "../App.tsx";
+import httpClient from "../services/httpClient.ts";
+import endpoints from "../services/endpoints.ts";
+import {IScenarioResponse} from "../typings/IScenarioBody.ts";
 
-export const cloneConfiguration = async (data) => {
+export const cloneConfiguration = async (data, teamId) => {
   // Track resources created to enable potential rollback
   const createdResources = {
     dataStructures: [],
-    dataStore: null,
-    dataRecord: null,
     scenarios: []
   };
 
   try {
-    // Step 1: Clone Data Structures
-    const { dataStructureMap, dataStructureId } = await cloneDataStructures(createdResources);
-    if (!dataStructureId) {
+
+    const response = await getUserScenarios(teamId);
+
+    if(response.data.length){
+      await updateScenarios(response.data)
+      return
+    }
+
+    const { dataStructureMap } = await cloneDataStructures(createdResources, teamId);
+    if (!dataStructureMap.size) {
       throw new Error("Data Structure Cloning Failed");
     }
 
-    // Step 2: Create Data Store
-    const dataStoreId = await createDataStoreStep(dataStructureId, createdResources);
-    if (!dataStoreId) {
-      throw new Error("Data Store Creation Failed");
-    }
-
-    // Step 3: Post Data Record
-    const dataRecordId = await postDataRecordStep(createdResources, data);
-    if (!dataRecordId) {
-      throw new Error("Data Record Creation Failed");
-    }
-
     // Step 4: Clone Scenarios
-    await cloneScenariosStep(dataStructureMap, createdResources);
+    await cloneScenarios(dataStructureMap, createdResources, teamId);
 
     return createdResources;
   } catch (mainError) {
@@ -67,58 +64,36 @@ export const cloneConfiguration = async (data) => {
   }
 };
 
-const cloneDataStructures = async (createdResources) => {
+const cloneDataStructures = async (createdResources, teamId) => {
   const dataStructureMap = new Map();
-  let firstDataStructureId = null;
 
   try {
     const response = await getDataStructures();
+    const userResponse = await getDataStructures(teamId)
     const dataStructures = response.data
+    const userDataStructures = userResponse.data
 
-    for (let i = 0; i < 9; i++) {
-      try {
-        const dataStructureDetails = await createDataStructure({
-          spec: dataStructures[i].spec,
-          name: dataStructures[i].name,
-          teamId: teamId
-        });
+    for (const structure of dataStructures){
+      const userStructure = userDataStructures.find(userStructure => userStructure.name === structure.name)
 
-        // Track created data structure
-        createdResources.dataStructures.push(dataStructureDetails.data.dataStructure.id);
-
-        // Map old structure ID to new structure ID
-        dataStructureMap.set(dataStructures[i].id, dataStructureDetails.data.dataStructure.id);
-
-        // Keep track of first data structure ID
-        if (i === 0) {
-          firstDataStructureId = dataStructureDetails.data.dataStructure.id;
-        }
-      } catch (structureError) {
-        console.error(`Failed to clone data structure ${i}:`, structureError);
-        // Fail fast - stop entire process if any structure fails
-        throw structureError;
+      if(userStructure){
+        dataStructureMap.set(structure.id, userStructure.id)
       }
     }
 
-    return { dataStructureMap, dataStructureId: firstDataStructureId };
+    return { dataStructureMap };
   } catch (error) {
-    console.error("Data Structures Cloning Failed:", error);
     throw error;
   }
 };
 
-const createDataStoreStep = async (dataStructureId, createdResources) => {
+const createDataStoreStep = async (dataStructureId, createdResources, teamId) => {
   try {
-    const dataStoreResponse = await createDataStore({
-      datastructureId: dataStructureId,
-      name: 'QBWA Test',
-      teamId: teamId
-    });
+    const dataStoreResponse = await httpClient.get(endpoints.makeApi.getDataStores, { params: { teamId } })
 
-    // Track created data store
-    createdResources.dataStore = dataStoreResponse.data.dataStore.id;
+    createdResources.dataStore = dataStoreResponse.data[0].id;
 
-    return dataStoreResponse.data.dataStore.id;
+    return dataStoreResponse.data[0].id;
   } catch (error) {
     console.error("Data Store Creation Failed:", error);
     throw error;
@@ -147,22 +122,11 @@ const postDataRecordStep = async (createdResources, data) => {
 const rollbackCreatedResources = async (createdResources) => {
   try {
     // Rollback scenarios
+    console.log("scenarios: " + JSON.stringify(createdResources))
+
     if (createdResources.scenarios.length) {
       await Promise.all(
         createdResources.scenarios.map(scenarioId => deleteScenario(String(scenarioId)))
-      );
-    }
-
-
-    // Rollback data store
-    if (createdResources.dataStore) {
-      await deleteDataStore([String(createdResources.dataStore)], teamId);
-    }
-
-    // Rollback data structures
-    if (createdResources.dataStructures.length) {
-      await Promise.all(
-        createdResources.dataStructures.map(structureId => deleteDataStructure(String(structureId)))
       );
     }
   } catch (rollbackError) {
@@ -172,91 +136,77 @@ const rollbackCreatedResources = async (createdResources) => {
   }
 };
 
-const cloneScenariosStep = async (dataStructureMap, createdResources) => {
+const updateScenarios = async (scenarios: IScenarioResponse[]) => {
+  try{
+    for(const scenario of scenarios){
+      const blueprint = await getScenarioBlueprint(scenario.id);
+
+      await updateScenario(scenario.id, JSON.stringify(blueprint.data.data))
+    }
+  }
+  catch (e){
+    throw e
+  }
+}
+
+
+
+const cloneScenarios = async (dataStructureMap, createdResources, teamId) => {
   try {
     const scenarios = await getScenarios();
-    scenarios.data.sort((a, b) => b.hookId  - a.hookId)
-    const connection = await getConnections(teamId)
+    scenarios.data.sort((a, b) => b.hookId - a.hookId)
+    const connections = await getConnections(teamId)
     const webhooksIdMap = new Map(); // Store original webhook ID → new webhook ID mapping
+    const dataStoreResponse = await httpClient.get(endpoints.makeApi.getDataStores, { params: { teamId } })
+
+
+    const hooksResponse = await getHooksFromSource();
+    let hookUrl;
+
+    // Create new webhooks for each reference found
+    for (const webhookRef of hooksResponse.data) {
+      if (!webhooksIdMap.has(webhookRef.id)) {
+        // Create new webhook with necessary configuration
+        const newWebhook = await createHook({
+          name: `${webhookRef.name}`,
+          teamId: teamId,
+          stringify: false,
+          method: false,
+          typeName: 'gateway-webhook',
+          headers: false
+        });
+
+        hookUrl = newWebhook.data.url;
+        webhooksIdMap.set(webhookRef.id, newWebhook.data.id);
+      }
+    }
 
 
     for (const scenario of scenarios.data) {
       try {
-        const blueprintResponse = await getScenarioBlueprint(scenario.id);
+        const clonedScenarioBody = createCloneScenarioBody(scenario, connections.data.data, webhooksIdMap, dataStructureMap, dataStoreResponse.data[0].id, teamId)
+        const clonedScenario = await cloneScenario(String(scenario.id), clonedScenarioBody);
+
+        createdResources.scenarios.push(clonedScenario.data.id);
+
+        const blueprintResponse = await getScenarioBlueprint(clonedScenario.data.id);
         const blueprint = blueprintResponse.data.data;
-        const hooksResponse = await getHooksFromSource();
 
-        const webhookReferences = extractWebhookReferences(blueprint);
+        setHookUrl(blueprint, hookUrl);
 
-        // Create new webhooks for each reference found
-        for (const webhookRef of webhookReferences) {
-          if (!webhooksIdMap.has(webhookRef.id)) {
-            // Create new webhook with necessary configuration
-            const newWebhook = await createHook({
-              name: `Cloned: ${webhookRef.name}`,
-              teamId: teamId,
-              stringify: false,
-              method: false,
-              typeName: 'gateway-webhook',
-              headers: false
-            });
+        await updateScenario(clonedScenario.data.id, JSON.stringify(blueprint))
 
-            webhooksIdMap.set(webhookRef.id, newWebhook.data.id);
-          }
-        }
-
-        console.log(webhooksIdMap)
-
-        // Modify blueprint with new mappings
-        setConnectionValue(blueprint, "__IMTCONN__", connection.data.data);
-        setDataStoreValue(blueprint, createdResources.dataStore);
-        setJSONValue(blueprint, dataStructureMap);
-        setDataRecordKey(blueprint, createdResources.dataRecord)
-        setWebhookValues(blueprint, webhooksIdMap); // New function to replace webhook references
-
-        // Create scenario
-        const createdScenario = await createScenario({
-          scheduling: "{ \"type\": \"indefinitely\", \"interval\": 900 }",
-          teamId: teamId,
-          folderId: folderId,
-          blueprint: JSON.stringify(blueprint)
-        });
-        //
-        // // Track created scenarios
-        createdResources.scenarios.push(createdScenario.data.scenario.id);
-      } catch (scenarioError) {
-        console.error(`Failed to clone scenario:`, scenarioError);
-        // Fail fast - stop entire process if any scenario fails
-        throw scenarioError;
+      }
+      catch (e){
+        console.log(e)
+        throw e
       }
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error("Scenarios Cloning Failed:", error);
     throw error;
   }
-};
+}
 
-const extractWebhookReferences = (blueprint) => {
-  const webhookRefs = [];
-
-  const findWebhooks = (obj) => {
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        // Look for webhook identifiers in the blueprint structure
-        // This might be something like a "webhook" field or a specific pattern
-        if (key === "hook" && typeof obj[key] === "number") {
-          webhookRefs.push({
-            id: obj[key],
-            name: obj.name || `Webhook-${obj[key]}`
-          });
-        } else if (typeof obj[key] === "object" && obj[key] !== null) {
-          findWebhooks(obj[key]);
-        }
-      }
-    }
-  };
-
-  findWebhooks(blueprint);
-  return webhookRefs;
-};
 

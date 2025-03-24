@@ -33,7 +33,7 @@ const endpoints = {
     listConnections: "makeApi/connections",
     createConnection: "makeApi/connections",
     verifyConnection: "makeApi/connections/:connectionId/test",
-    updateDataRecord: "makeApi/data-stores/:dataStoreId/data/:key",
+    updateDataRecord: "makeApi/data-stores/:dataStoreId/data/:dataStoreRecordKey",
     listOrganizations: "makeApi/organizations",
     listTeams: "makeApi/teams",
     OAuth: "makeApi/oauth/auth/:connectionId",
@@ -44,8 +44,20 @@ const endpoints = {
     runScenarios: "makeApi/scenarios/:scenarioId/run",
     activeScenario: "makeApi/scenarios/:scenarioId/start",
     getScenarioDetails: "makeApi/scenarios/:scenarioId",
-    hooks: "makeApi/hooks"
+    hooks: "makeApi/hooks",
+    cloneScenarios: "makeApi/scenarios/:scenarioId/clone",
+    getTemplateUrl: "makeApi/instances/flow/init/template",
+    getFlow: "makeApi/instances/flow/:flowId",
+    updateScenario: "makeApi/update-scenario/:scenarioId",
+    getDataStores: "makeApi/data-stores",
+    getScenarioLogs: "makeApi/scenarios/:scenarioId/logs"
   },
+  userApi: {
+    login: "api/users/login",
+    register: "api/users/register",
+    getOnboardingData: "api/users/onboarding-data",
+    updateOnboardingStep: "api/users/onboarding-step"
+  }
 };
 
 export default endpoints;

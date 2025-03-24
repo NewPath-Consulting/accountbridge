@@ -17,6 +17,11 @@
     overflow-y: auto; /* Allows scrolling if content is long */
 }
 
+@media (max-width: 1100px) {
+    .content-area {
+        padding: 5em 4em;
+    }
+}
 
 @media (min-width: 900px) {
     .progress-bar {

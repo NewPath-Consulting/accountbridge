@@ -6,8 +6,8 @@ export const ProtectedOnboardingRoute = ({ children }) => {
   const location = useLocation();
 
   // Find the first incomplete step
-  const firstIncompleteStep = steps.find(step =>
-    !onBoardingData.completedSteps.includes(step.endpoint)
+  const firstIncompleteStep = steps.find((step, index) =>
+    index + 1 == onBoardingData.onboardingStep
   );
 
   // If user can't access current step, redirect to first incomplete step

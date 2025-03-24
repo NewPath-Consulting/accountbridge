@@ -14,6 +14,17 @@ const convertTo12Hour = (time: string | undefined) => {
   return `${hours}:${String(minutes).padStart(2, "0")} ${period}`;
 };
 
+const formatDateToYYYYMMDD = (dateString) => {
+  if (!dateString) return "";
+
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
 export const formatQBVersionInfo = (generalInfo: IGeneralInformation) => {
   return {
     "QB Version Info": {
@@ -23,6 +34,7 @@ export const formatQBVersionInfo = (generalInfo: IGeneralInformation) => {
     }
   }
 }
+
 export const formatCustomerInfo = (customerInfo: ICustomerInfo) => {
   return {
     "Customer Field Config": {
@@ -45,7 +57,7 @@ export const formatCustomerInfo = (customerInfo: ICustomerInfo) => {
   };
 }
 
-export const formatPaymentConfig = (paymentConfig: PaymentConfig[], accountReceivable: Account, depositAccount: Account, schedulingData: SchedulingData) => {
+export const formatPaymentConfig = (paymentConfig: PaymentConfig[], accountReceivable: Account, depositAccount: Account, schedulingData: SchedulingData | null) => {
 
   return {
     "Payment Config": {
@@ -90,7 +102,7 @@ interface DonationConfig {
   alternateDonationConfig: DonationMapping[]
 }
 
-export const formatDonationConfig = (donationConfig: DonationConfig, schedulingData: SchedulingData) => {
+export const formatDonationConfig = (donationConfig: DonationConfig, schedulingData: SchedulingData | null) => {
 
   return {
     "Donation Config": {
@@ -145,7 +157,7 @@ export const formatDonationConfig = (donationConfig: DonationConfig, schedulingD
   }
 }
 
-export const formatInvoiceConfig = (invoiceConfig: InvoiceConfiguration[], schedulingData: SchedulingData) => {
+export const formatInvoiceConfig = (invoiceConfig: InvoiceConfiguration[], schedulingData: SchedulingData | null) => {
 
   return {
     "Invoice Config": {
@@ -241,8 +253,8 @@ export const formatDataRecord = (onBoardingData, invoiceConfigurations: InvoiceC
     ...formatDonationConfig({
       defaultDonationConfig: onBoardingData.defaultDonationMapping,
       alternateDonationConfig: onBoardingData.donationMappingList,
-      commentName: onBoardingData.donationCommentName,
-      campaignName: onBoardingData.donationCampaignName
+      commentName: onBoardingData.donationComment,
+      campaignName: onBoardingData.donationCampaign
     }, onBoardingData.donationScheduling),
     ...formatInvoiceConfig(invoiceConfigurations, onBoardingData.invoiceScheduling),
     ...formatNotificationConfig(onBoardingData.generalInfo)

@@ -8,18 +8,6 @@ export class AuthService {
   private static qbRealmId: string | null = null;
   private static baseUrl: string | null = null;
 
-  static setAuth(token: string, baseUrl: string) {
-    this.dynamicToken = token;
-    this.baseUrl = baseUrl;
-  }
-
-  static getToken() {
-    return this.dynamicToken
-  }
-
-  static getBaseUrl() {
-    return this.baseUrl
-  }
 
   static setQuickbooksAuth(accessToken: string, realmId: string) {
     this.qbAccessToken = accessToken;
@@ -45,13 +33,12 @@ const httpClient = axios.create({
 httpClient.interceptors.request.use(
   (config) => {
 
-    if(config.url.includes("makeApi")){
-      config.headers.Authorization = AuthService.getToken();
-      config.headers.baseUrl = AuthService.getBaseUrl()
-    }
-    else if(config.url.includes("quickbooks")){
+    if(config.url.includes("quickbooks")){
       config.headers.Authorization = localStorage.getItem("qbAccessToken");
       config.headers.realmId = localStorage.getItem("qbRealmId");
+    }
+    else if(config.url.includes("users")) {
+      config.headers.Authorization = localStorage.getItem("accountbridge_token");
     }
     return config;
   },
@@ -62,6 +49,7 @@ httpClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    console.log(error)
     // If the error is 401 and we haven't already retried
     if (originalRequest.url.includes("quickbooks") && error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true; // Mark request as retried

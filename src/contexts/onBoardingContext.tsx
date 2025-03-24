@@ -1,121 +1,170 @@
 import {createContext, useEffect, useState} from "react";
-import {AuthService} from "../services/httpClient.ts";
+import httpClient, {AuthService} from "../services/httpClient.ts";
 import {ICustomerInfo} from "../pages/customer-info-page/CustomerInformationPage.tsx";
 import {IGeneralInformation} from "../pages/general-information-page/GeneralInformationPage.tsx";
 import {IStep, ONBOARDING_STEPS} from "../onboardingSteps.tsx";
-import {useLocation} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
+import {DonationFieldName, DonationMapping} from "../pages/donation-config-page/DonationConfigPage.tsx";
+import {InvoiceMapping} from "../pages/invoice-configuration-page/InvoiceConfigPage.tsx";
+import {Account} from "../pages/payment-config-page/PaymentConfigPage.tsx";
+import {SchedulingData} from "../pages/scheduling-page/SchedulingPage.tsx";
+import {useAuth} from "../hooks/useAuth.tsx";
+import {getOnboardingData, updateOnboardingStepNumber} from "../services/api/users-api/onboardingData.ts";
+import endpoints from "../services/endpoints.ts";
 
-interface OnboardingState {
-  authToken: string;
-  baseUrl: string;
-  connections: { name: string; apiKey: string }[];
-  customerInfo: ICustomerInfo | {};
-  wildApricotAPI: string,
-  generalInfo: IGeneralInformation | {},
-  completedSteps: string[]; // Track completed step endpoints
+export interface OnboardingState {
+  teamId: number;
+  onboardingStep: number,
+  customerInfo: ICustomerInfo;
+  generalInfo: IGeneralInformation,
+  invoiceScheduling: SchedulingData | null,
+  paymentScheduling: SchedulingData | null,
+  donationScheduling: SchedulingData | null,
+  hasClasses: boolean,
+  donationCampaign: DonationFieldName,
+  donationComment: DonationFieldName,
+  defaultDonationMapping: DonationMapping,
+  donationMappingList: any,
+  accountReceivable: Account,
+  defaultMembershipProduct: InvoiceMapping,
+  defaultEventProduct: InvoiceMapping,
+  defaultStoreProduct: InvoiceMapping,
+  manualInvoiceMapping: InvoiceMapping,
+  membershipLevelMappingList: any,
+  eventMappingList: any,
+  onlineStoreMappingList: any,
+  qbDepositAccount: Account,
+  paymentMappingList: any
 }
 
-interface OnboardingContextType {
+export interface OnboardingContextType {
   onBoardingData: OnboardingState;
-  updateData: (data: any) => void;
+  updateData: (data: Partial<OnboardingState>) => void;
   currentStepIndex: number;
   steps: IStep[];
-  markStepAsCompleted: (endpoint: string) => void;
+  markStepAsCompleted: (pathName: string) => Promise<void>;
   canAccessStep: (endpoint: string) => boolean;
   getNextStep: () => string | null;
   getPreviousStep: () => string | null;
+  updateOnboardingStep: (endpoint: string, body: Partial<OnboardingState>) => void
 }
 
 export const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
 
+const getInitialOnboardingState = (): OnboardingState => {
+  return {
+    teamId: 0,
+    onboardingStep: 1,
+    customerInfo: {} as ICustomerInfo,
+    generalInfo: {} as IGeneralInformation,
+    invoiceScheduling: null,
+    paymentScheduling: null,
+    donationScheduling: null,
+    hasClasses: false,
+    donationCampaign: {Id: "", FieldName: ""} as DonationFieldName,
+    donationComment: {Id: "", FieldName: ""} as DonationFieldName,
+    defaultDonationMapping: {} as DonationMapping,
+    donationMappingList: null,
+    accountReceivable: {} as Account,
+    defaultMembershipProduct: {} as InvoiceMapping,
+    defaultEventProduct: {} as InvoiceMapping,
+    defaultStoreProduct: {} as InvoiceMapping,
+    manualInvoiceMapping: {} as InvoiceMapping,
+    membershipLevelMappingList: null,
+    eventMappingList: null,
+    onlineStoreMappingList: null,
+    qbDepositAccount: {} as Account,
+    paymentMappingList: null
+  };
+};
+
 export const OnBoardingProvider = ({children}) => {
   const location = useLocation();
-  const [steps, setSteps] = useState<IStep[]>(() => {
-    const completedSteps = JSON.parse(localStorage.getItem("completedSteps") || "[]");
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [steps, setSteps] = useState<IStep[]>(ONBOARDING_STEPS);
+  const navigate = useNavigate();
 
-    return ONBOARDING_STEPS.map(step => ({
-      ...step,
-      isCompleted: completedSteps.includes(step.endpoint)
-    }));
-  });
 
-  const [onBoardingData, setOnBoardingData] = useState<OnboardingState>(() => {
-    const savedBaseUrl = localStorage.getItem("baseUrl") || "";
-    const savedAuthToken = localStorage.getItem("authToken") || "";
-    const savedWildApricotAPI = localStorage.getItem("waApiKey") || ""
-    return {
-      baseUrl: savedBaseUrl,
-      authToken: savedAuthToken,
-      connections: [],
-      customerInfo: {},
-      wildApricotAPI: savedWildApricotAPI,
-      generalInfo: {},
-      completedSteps: JSON.parse(localStorage.getItem("completedSteps") || "[]")
-    };
-  });
+  const [onBoardingData, setOnBoardingData] = useState<OnboardingState>(getInitialOnboardingState);
 
   const currentStepIndex = steps.findIndex(step => step.endpoint === location.pathname);
 
-  useEffect(() => {
-    steps.forEach(step => {
-      if(onBoardingData.completedSteps.includes(step.endpoint)){
-        step.isCompleted = true
-      }
-    })
-    console.log(steps)
-  }, [onBoardingData.completedSteps]);
 
   useEffect(() => {
-    if(onBoardingData.baseUrl && onBoardingData.authToken){
-      AuthService.setAuth(onBoardingData.authToken, onBoardingData.baseUrl);
+    if (isInitialized) {
+      setSteps(ONBOARDING_STEPS.map((step, index) => {
+        return {
+          ...step,
+          isCompleted: index + 1 < onBoardingData.onboardingStep
+        };
+      }));
     }
-  }, [onBoardingData.baseUrl, onBoardingData.authToken]);
+  }, [isInitialized, onBoardingData.onboardingStep])
 
-  const [currentStep, setCurrentStep] = useState<number>(1);
+
+  useEffect(() => {
+    const fetchOnboardingData = async() => {
+      try{
+        const response = await getOnboardingData()
+        setOnBoardingData(prev => ({...prev, ...response.data}))
+
+
+      }
+      catch (e){
+        throw new Error(e)
+      }
+      finally {
+        setIsInitialized(true)
+      }
+
+    }
+
+    fetchOnboardingData()
+  }, []);
+
+  useEffect(() => {
+    console.log(onBoardingData)
+  }, [onBoardingData]);
 
   const updateData = (data) => {
     // Update context state
     setOnBoardingData((prev) => {
-      const updatedData = { ...prev, ...data }
-
-      // Persist only baseUrl and authToken in localStorage
-      if (data.baseUrl) {
-        localStorage.setItem("baseUrl", data.baseUrl);
-      }
-      if (data.authToken) {
-        localStorage.setItem("authToken", data.authToken);
-      }
-
-      return updatedData;
+      return { ...prev, ...data }
     });
   };
 
-  const markStepAsCompleted = (endpoint: string) => {
-    // Update completedSteps in state
-    if(onBoardingData.completedSteps.includes(endpoint))
-      return;
+  const updateOnboardingStep = async (endpoint: string, body: Partial<OnboardingState>) => {
+
+    try{
+      await httpClient.post(`/api/users${endpoint}`, body)
+    }
+    catch (e){
+      console.log(e)
+      throw new Error(e.response.data.message)
+    }
+  }
+
+  const markStepAsCompleted = async (pathName: string) => {
+
+    const index = ONBOARDING_STEPS.findIndex(step => step.endpoint === pathName)
+
+    if(index + 1 < onBoardingData.onboardingStep) {
+      return
+    }
 
     setOnBoardingData(prev => {
-      const completedSteps = [...prev.completedSteps, endpoint];
-      localStorage.setItem("completedSteps", JSON.stringify(completedSteps));
-      return {...prev, completedSteps};
-    });
+      const updatedStep = onBoardingData.onboardingStep + 1;
 
-    // Update steps array to set isCompleted flag
-    setSteps(prevSteps =>
-      prevSteps.map(step =>
-        step.endpoint === endpoint
-          ? {...step, isCompleted: true}
-          : step
-      )
-    );
-  }
+      updateOnboardingStepNumber(updatedStep);
+
+      return { ...prev, onboardingStep: updatedStep };
+    });
+  };
 
   // Check if user can access a specific step
   const canAccessStep = (endpoint: string): boolean => {
     const targetIndex = steps.findIndex(step => step.endpoint === endpoint);
-    const previousSteps = steps.slice(0, targetIndex);
-    return previousSteps.every(step => onBoardingData.completedSteps.includes(step.endpoint));
+    return targetIndex < onBoardingData.onboardingStep
   };
 
   // Get the next available step
@@ -131,8 +180,12 @@ export const OnBoardingProvider = ({children}) => {
     return null;
   };
 
+  if(!isInitialized){
+    return <></>
+  }
+
   return (
-    <OnboardingContext.Provider value={{onBoardingData, updateData, currentStep, setCurrentStep, steps, currentStepIndex, canAccessStep, markStepAsCompleted, getNextStep, getPreviousStep}}>
+    <OnboardingContext.Provider value={{onBoardingData, updateData, steps, currentStepIndex, canAccessStep, markStepAsCompleted, getNextStep, getPreviousStep, updateOnboardingStep}}>
       {children}
     </OnboardingContext.Provider>
   )

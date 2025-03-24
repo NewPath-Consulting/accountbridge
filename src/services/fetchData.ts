@@ -1,8 +1,9 @@
 import {getQueriedResults} from "./api/quickbooks-api/accountService.ts";
 
-export const fetchData = async (query, setState, responseKey, setErrorMsg) => {
+export const fetchData = async (query, setState, responseKey, setErrorMsg, url) => {
+
   try {
-    const response = await getQueriedResults(query);
+    const response = await getQueriedResults(query, url);
     const { queryResponse } = response.data;
     // Access the data dynamically using the responseKey
     const data = queryResponse[responseKey];

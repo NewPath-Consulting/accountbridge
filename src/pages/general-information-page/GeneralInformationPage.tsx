@@ -7,6 +7,9 @@ import './GeneralInformation.css'
 import {getWildApricotAccounts} from "../../services/api/wild-apricot-api/accountsService.ts";
 import {useNavigate} from "react-router-dom";
 import {configureQuickBooksUrl} from "../../services/api/quickbooks-api/accountService.ts";
+import {updateDataRecord} from "../../services/api/make-api/dataStructuresService.ts";
+import {configurations} from "../../configurations.ts";
+import {formatNotificationConfig, formatQBVersionInfo} from "../../utils/formatter.ts";
 
 export interface IGeneralInformation {
   organizationName: string,
@@ -20,7 +23,7 @@ export interface IGeneralInformation {
 }
 
 export const GeneralInformationPage = () => {
-  const {onBoardingData, updateData, getNextStep, markStepAsCompleted } = useOnBoarding()
+  const {onBoardingData, updateData, getNextStep, markStepAsCompleted, updateOnboardingStep } = useOnBoarding()
   const navigate = useNavigate();
 
   const [errorMsg, setErrorMsg] = useState<string | string[]>('');
@@ -32,7 +35,7 @@ export const GeneralInformationPage = () => {
 
   useEffect(() => {
     if(Object.keys(onBoardingData.generalInfo).length !== 0) {
-      setFormData(onBoardingData.generalInfo)
+      setFormData(prevState => ({...prevState, ...onBoardingData.generalInfo}))
 
       if(onBoardingData.generalInfo?.toEmailAddresses){
         setRawEmailInput(onBoardingData.generalInfo.toEmailAddresses.join(', '))
@@ -53,17 +56,33 @@ export const GeneralInformationPage = () => {
     fetchWildApricotAccounts()
   }, []);
   const handleSubmission = async () => {
-    const errors = await validateForm();
 
-    if(errors.length){
-      setErrorMsg(errors)
-      return
+    try{
+      const errors = await validateForm();
+
+      if(errors.length){
+        setErrorMsg(errors)
+        return
+      }
+
+      await updateOnboardingStep('/general-info', {generalInfo: formData})
+      await updateDataRecord('ca72cb0afc44', onBoardingData.teamId, {
+        "Org Time Zone": onBoardingData.generalInfo.timeZone,
+        "WA Config Record Name": onBoardingData.generalInfo.recordName,
+        "WA Org Name": onBoardingData.generalInfo.organizationName,
+        ...configurations,
+        "Config Last Updated": new Date(),
+        ...formatQBVersionInfo(onBoardingData.generalInfo),
+        ...formatNotificationConfig(onBoardingData.generalInfo)
+      })
+      await markStepAsCompleted("/general-information");
+      const nextStep = getNextStep();
+      if (nextStep) {
+        navigate(nextStep);
+      }
     }
-
-    markStepAsCompleted('/general-information');
-    const nextStep = getNextStep();
-    if (nextStep) {
-      navigate(nextStep);
+    catch (e){
+      setErrorMsg(e.message || "Unable to complete step")
     }
   }
 
@@ -98,6 +117,10 @@ export const GeneralInformationPage = () => {
       errors.push("QuickBooks url is not valid.")
     }
 
+    if(formData.toEmailAddresses.length !== new Set(formData.toEmailAddresses).size){
+      errors.push("Cannot input duplicate emails for input 'to email addresses'")
+    }
+
     return errors
   }
 
@@ -108,7 +131,7 @@ export const GeneralInformationPage = () => {
 
   const handleAccountChange = (e) => {
     const orgName = WildApricotAccounts.find(account => account.Id == e.target.value);
-    setFormData({...formData, accountId: e.target.value, organizationName: orgName.Name ?? ""})
+    setFormData({...formData, accountId: e.target.value, organizationName: orgName ?  orgName.Name : "", recordName: orgName ? `${orgName.Name} - MASTER (USE)` : ""})
   }
 
   const handleToEmailAddressesChange = (e) => {
@@ -174,14 +197,14 @@ export const GeneralInformationPage = () => {
             </div>
             <div className="col-md-7">
               <input
-                value={formData.organizationName} name={'organizationName'} onChange={handleFormData} type={"text"} id={'wa-org-name'} className={'form-control form-control-sm'} disabled={true} placeholder={''} maxLength={41}/>
+                value={formData.organizationName || ""} name={'organizationName'} onChange={handleFormData} type={"text"} id={'wa-org-name'} className={'form-control form-control-sm'} disabled={true} placeholder={''} maxLength={41}/>
             </div>
             <div className="col-md-5">
               <label htmlFor={'config-name'}>WA Config Record Name</label>
-              <p>n/a for initial change</p>
+              <p>This field is populated when account is chosen</p>
             </div>
             <div className="col-md-7">
-              <input value={formData.recordName} name={'recordName'} onChange={handleFormData} id={'config-name'} type={"text"} placeholder={'ex. <Customer-name>-<master-use>'} className={'form-control form-control-sm'}/>
+              <input value={formData.recordName || ""} name={'recordName'} onChange={handleFormData} id={'config-name'} type={"text"} disabled={true} placeholder={''} className={'form-control form-control-sm'}/>
             </div>
             <div className="col-md-5">
               <label htmlFor={'time-zone-input'}>Org Time Zone</label>

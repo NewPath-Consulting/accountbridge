@@ -19,44 +19,62 @@ import {useEffect, useRef} from "react";
 import {ProtectedOnboardingRoute} from "./components/protected-onboarding-route/ProtectedOnboardingRoute.tsx";
 import {ScrollToTop} from "./components/scroll-to-top/ScrollToTop.tsx";
 import {RunScenariosPage} from "./pages/run-scenarios-page/RunScenariosPage.tsx";
+import {LoginPage} from "./pages/auth/LoginPage.tsx";
+import {RegistrationPage} from "./pages/auth/RegistrationPage.tsx";
+import {AuthContext, AuthProvider} from "./contexts/AuthContext.tsx";
+import {ProtectedRoute} from "./components/protected-onboarding-route/ProtectedRoute.tsx";
 
-//26aba993-f746-44bf-9378-e71a2ffae2e6
-export const teamId = 740495;
-export const folderId = 246724;
 function App() {
   return (
-    <Router >
-      <ScrollToTop/>
-      <OnBoardingProvider>
-        <div className="app-container">
-          <div className={"navbar"}>
-            <Navbar/>
-          </div>
-          <div className="main-layout">
-            <Sidebar className={"sidebar"}/>
-            <div className="content-area">
-              <div className={"progress-bar"}>
-                <ProgressBar2 />
+    <Router>
+      <ScrollToTop />
+      <AuthProvider>
+        <Routes>
+        {/* Standalone Login & Register Pages */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegistrationPage />} />
+        {/* Onboarding Pages with Layout */}
+        <Route
+          path="/*"
+          element={
+          <ProtectedRoute>
+            <OnBoardingProvider>
+              <div className="app-container">
+                <div className="navbar">
+                  <Navbar />
+                </div>
+                <div className="main-layout">
+                  <Sidebar className="sidebar" />
+                  <div className="content-area">
+                    <div className="progress-bar">
+                      <ProgressBar2 />
+                    </div>
+                    <Routes>
+                      <Route path="/create-connections" element={<ProtectedOnboardingRoute><CreateConnectionsPage /></ProtectedOnboardingRoute>} />
+                      <Route path="/" element={<CreatMakeAccountPage />} />
+                      <Route path="/customer-information" element={<ProtectedOnboardingRoute><CustomerInformationPage /></ProtectedOnboardingRoute>} />
+                      <Route path="/invoice-config" element={<ProtectedOnboardingRoute><InvoiceConfigPage /></ProtectedOnboardingRoute>} />
+                      <Route path="/oauth-success" element={<OAuthSuccess />} />
+                      <Route path="/payment-config" element={<ProtectedOnboardingRoute><PaymentConfigPage /></ProtectedOnboardingRoute>} />
+                      <Route path="/donation-config" element={<ProtectedOnboardingRoute><DonationConfigPage /></ProtectedOnboardingRoute>} />
+                      <Route path="/clone-scenarios" element={<ProtectedOnboardingRoute><CloneScenariosPage /></ProtectedOnboardingRoute>} />
+                      <Route path="/job-scheduling" element={<ProtectedOnboardingRoute><SchedulingPage /></ProtectedOnboardingRoute>} />
+                      <Route path="/general-information" element={<ProtectedOnboardingRoute><GeneralInformationPage /></ProtectedOnboardingRoute>} />
+                      <Route path="/run-and-test" element={<ProtectedOnboardingRoute><RunScenariosPage /></ProtectedOnboardingRoute>} />
+                    </Routes>
+                  </div>
+                </div>
               </div>
-              <Routes>
-                <Route path="/" element={<CreatMakeAccountPage />} />
-                <Route path="/create-connections" element={<ProtectedOnboardingRoute><CreateConnectionsPage /></ProtectedOnboardingRoute>} />
-                <Route path="/customer-information" element={<ProtectedOnboardingRoute><CustomerInformationPage /></ProtectedOnboardingRoute>} />
-                <Route path="/invoice-config" element={<ProtectedOnboardingRoute><InvoiceConfigPage /></ProtectedOnboardingRoute>} />
-                <Route path="/oauth-success" element={<OAuthSuccess />} />
-                <Route path="/payment-config" element={<ProtectedOnboardingRoute><PaymentConfigPage /></ProtectedOnboardingRoute>} />
-                <Route path="/donation-config" element={<ProtectedOnboardingRoute><DonationConfigPage /></ProtectedOnboardingRoute>} />
-                <Route path="/clone-scenarios" element={<ProtectedOnboardingRoute><CloneScenariosPage /></ProtectedOnboardingRoute>} />
-                <Route path="/job-scheduling" element={<ProtectedOnboardingRoute><SchedulingPage /></ProtectedOnboardingRoute>} />
-                <Route path="/general-information" element={<ProtectedOnboardingRoute><GeneralInformationPage /></ProtectedOnboardingRoute>} />
-                <Route path="/run-and-test" element={<ProtectedOnboardingRoute><RunScenariosPage /></ProtectedOnboardingRoute>} />
-              </Routes>
-            </div>
-          </div>
-        </div>
-      </OnBoardingProvider>
+            </OnBoardingProvider>
+          </ProtectedRoute>
+          }
+        />
+      </Routes>
+      </AuthProvider>
     </Router>
-  )
+
+
+  );
 }
 
 export default App

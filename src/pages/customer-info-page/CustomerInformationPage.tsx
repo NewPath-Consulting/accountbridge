@@ -9,6 +9,8 @@ import {
   getWildApricotAccounts
 } from "../../services/api/wild-apricot-api/accountsService.ts";
 import {PageTemplate} from "../../components/page-template/PageTemplate.tsx";
+import {updateDataRecord} from "../../services/api/make-api/dataStructuresService.ts";
+import {formatCustomerInfo} from "../../utils/formatter.ts";
 
 export interface ICustomerInfo {
   firstName: string,
@@ -25,7 +27,7 @@ export interface ICustomerInfo {
 }
 
 export const CustomerInformationPage = () => {
-  const {onBoardingData, updateData, markStepAsCompleted, getNextStep} = useOnBoarding();
+  const {onBoardingData, updateData, markStepAsCompleted, getNextStep, updateOnboardingStep} = useOnBoarding();
   const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState("");
   const [fieldNames, setFieldNames] = useState([]);
@@ -58,21 +60,6 @@ export const CustomerInformationPage = () => {
     userId: ""
   })
 
-  const handleData = (e) => {
-    const {name, value} = e.target;
-
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-
-    setFormErrors({
-      ...formErrors,
-      [name]: ""
-    })
-
-  }
-
   useEffect(() => {
     if(Object.keys(onBoardingData.customerInfo).length !== 0) {
       setFormData(onBoardingData.customerInfo)
@@ -93,8 +80,6 @@ export const CustomerInformationPage = () => {
         console.log(e)
       }
     }
-
-
 
     getAccountInfo().then(response => {
 
@@ -130,29 +115,38 @@ export const CustomerInformationPage = () => {
     return errors;
   }
 
-
   useEffect(() => {
     updateData({customerInfo: formData});
   }, [formData]);
 
-  const handleSubmit = () => {
-    console.log(onBoardingData)
-    // const errors = validateForm();
-    // if (Object.values(errors).some(value => value.trim() !== "")) {
-    //   setFormErrors(errors);
-    //   console.log(formErrors)
-    //   setErrorMsg("Please fill in all required fields")
-    // }
-    // else {
-    //   updateData({customerInfo: formData});
-    //   navigate("/invoice-config")
-    //   console.log(onBoardingData);
-    // }
-    markStepAsCompleted('/customer-information');
-    const nextStep = getNextStep();
-    if (nextStep) {
-      navigate(nextStep);
+  const handleSubmit = async () => {
+    try{
+      console.log(onBoardingData)
+      // const errors = validateForm();
+      // if (Object.values(errors).some(value => value.trim() !== "")) {
+      //   setFormErrors(errors);
+      //   console.log(formErrors)
+      //   setErrorMsg("Please fill in all required fields")
+      // }
+      // else {
+      //   updateData({customerInfo: formData});
+      //   navigate("/invoice-config")
+      //   console.log(onBoardingData);
+      // }
+      await updateOnboardingStep('/customer-info', {customerInfo: formData})
+      await updateDataRecord('ca72cb0afc44', onBoardingData.teamId, {
+        ...formatCustomerInfo(onBoardingData.customerInfo),
+      })
+        await markStepAsCompleted("/customer-information");
+      const nextStep = getNextStep();
+      if (nextStep) {
+        navigate(nextStep);
+      }
     }
+    catch (e){
+      setErrorMsg(e.message || "unable to complete step")
+    }
+
   };
 
   const handleChange = (event) => {
