@@ -23,6 +23,7 @@ import {getConnections} from "../services/api/make-api/connectionsService.ts";
 import {createHook, getHooksFromSource} from "../services/api/make-api/hooksService.ts";
 import httpClient from "../services/httpClient.ts";
 import endpoints from "../services/endpoints.ts";
+import {IScenarioResponse} from "../typings/IScenarioBody.ts";
 
 export const cloneConfiguration = async (data, teamId) => {
   // Track resources created to enable potential rollback
@@ -32,7 +33,14 @@ export const cloneConfiguration = async (data, teamId) => {
   };
 
   try {
-    // Step 1: Clone Data Structures
+
+    const response = await getUserScenarios(teamId);
+
+    if(response.data.length){
+      await updateScenarios(response.data)
+      return
+    }
+
     const { dataStructureMap } = await cloneDataStructures(createdResources, teamId);
     if (!dataStructureMap.size) {
       throw new Error("Data Structure Cloning Failed");
@@ -128,6 +136,19 @@ const rollbackCreatedResources = async (createdResources) => {
   }
 };
 
+const updateScenarios = async (scenarios: IScenarioResponse[]) => {
+  try{
+    for(const scenario of scenarios){
+      const blueprint = await getScenarioBlueprint(scenario.id);
+
+      await updateScenario(scenario.id, JSON.stringify(blueprint.data.data))
+    }
+  }
+  catch (e){
+    throw e
+  }
+}
+
 
 
 const cloneScenarios = async (dataStructureMap, createdResources, teamId) => {
@@ -172,7 +193,7 @@ const cloneScenarios = async (dataStructureMap, createdResources, teamId) => {
         const blueprint = blueprintResponse.data.data;
 
         setHookUrl(blueprint, hookUrl);
-        console.log(blueprint)
+
         await updateScenario(clonedScenario.data.id, JSON.stringify(blueprint))
 
       }
