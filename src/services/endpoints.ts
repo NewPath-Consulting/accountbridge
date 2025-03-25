@@ -59,7 +59,7 @@ const endpoints = {
     updateOnboardingStep: "api/users/onboarding-step"
   },
   generateMappingsApi: {
-    generateCustomerInfo: "api/generate-mapping/customer-info"
+    generateCustomerInfo: "api/generate-mapping/generate"
   }
 };
 

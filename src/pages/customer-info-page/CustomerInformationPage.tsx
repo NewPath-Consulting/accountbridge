@@ -10,7 +10,7 @@ import {
 import {PageTemplate} from "../../components/page-template/PageTemplate.tsx";
 import {updateDataRecord} from "../../services/api/make-api/dataStructuresService.ts";
 import {formatCustomerInfo} from "../../utils/formatter.ts";
-import {generateCustomerInformationMapping} from "../../services/api/generate-mapping-api/generateMapping.ts";
+import {generateMapping} from "../../services/api/generate-mapping-api/generateMapping.ts";
 import {BlurryOverlay} from "../../components/cloning-animation/BlurryOverlay.tsx";
 
 export interface ICustomerInfo {
@@ -89,11 +89,11 @@ export const CustomerInformationPage = () => {
 
   }, []);
 
-  const generateMapping = async () => {
+  const handleGenerateMapping = async () => {
     try{
       setErrorMsg('')
       setIsGenerateMappingLoading(true)
-      const response = await generateCustomerInformationMapping(fieldNames.map(name => name.FieldName).toString())
+      const response = await generateMapping(fieldNames.map(name => name.FieldName).toString(), 'You are a mapping assistant. When given a string of comma-separated field names, map each label to a corresponding Wild Apricot field name. Return the result as a JSON object where each label is mapped to a field name. Use the following labels: userId, firstName, lastName, email, phoneNumber, address, city, country, state, and organization. Do not include explanations or commentary, only the mapping.')
 
       const { message } = response.data
 
@@ -142,17 +142,6 @@ export const CustomerInformationPage = () => {
 
   const handleSubmit = async () => {
     try{
-      // const errors = validateForm();
-      // if (Object.values(errors).some(value => value.trim() !== "")) {
-      //   setFormErrors(errors);
-      //   console.log(formErrors)
-      //   setErrorMsg("Please fill in all required fields")
-      // }
-      // else {
-      //   updateData({customerInfo: formData});
-      //   navigate("/invoice-config")
-      //   console.log(onBoardingData);
-      // }
 
       await updateOnboardingStep('/customer-info', {customerInfo: formData})
       await updateDataRecord('ca72cb0afc44', onBoardingData.teamId, {
@@ -192,9 +181,9 @@ export const CustomerInformationPage = () => {
     >
       <BlurryOverlay isLoading={isGenerateMappingLoading} message={isGenerateMappingLoading ? `Currently Mapping your Customer Information Fields. ` : errorMsg ? "Error Occurred!" : "Mapping Completed!"} icon={"stars"} subtitle={"Please wait while our system maps your field names ..."}/>
       <div>
-        <div className={'d-flex justify-content-between align-items-center'}>
+        <div className={'d-flex justify-content-between align-items-center flex-wrap'}>
           <h5 className={'mb-4'}>Wild Apricot Information</h5>
-          <button className={"ai-btn"} onClick={generateMapping}>
+          <button className={"ai-btn"} onClick={handleGenerateMapping}>
             <i className={'bi bi-stars'} style={{color: 'black'}}></i>
             Map with AI
           </button>

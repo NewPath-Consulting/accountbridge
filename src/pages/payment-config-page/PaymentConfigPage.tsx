@@ -1,7 +1,7 @@
 import './PaymentConfig.css'
 import {useOnBoarding} from "../../hooks/useOnboarding.ts";
 import * as React from "react";
-import {useEffect, useReducer, useRef, useState} from "react";
+import {JSX, useEffect, useReducer, useRef, useState} from "react";
 import {getTenders} from "../../services/api/wild-apricot-api/tenderService.ts";
 import {useNavigate} from "react-router-dom";
 import {fetchData} from "../../services/fetchData.ts";
@@ -10,6 +10,8 @@ import {tableColumns} from "../../components/alternate-mapping-table/tableColumn
 import {PageTemplate} from "../../components/page-template/PageTemplate.tsx";
 import {updateDataRecord} from "../../services/api/make-api/dataStructuresService.ts";
 import {formatInvoiceConfig, formatPaymentConfig} from "../../utils/formatter.ts";
+import {BlurryOverlay} from "../../components/cloning-animation/BlurryOverlay.tsx";
+import {generateMapping} from "../../services/api/generate-mapping-api/generateMapping.ts";
 
 export interface PaymentConfig {
   WATender: string,
@@ -40,6 +42,8 @@ const reducer = (state, action) => {
           ? { ...row, ["QBTenderId"]: action.payload.value,  ["QBTender"]: action.payload.name} // Update specific field
           : row
       );
+    case "SET_MAPPING":
+        return action.payload
     default:
       return state;
   }
@@ -53,6 +57,7 @@ export const PaymentConfigPage = () => {
   const [WildApricotTenders, setWildApricotTenders] = useState([]);
   const [depositAccountsList, setDepositAccountsList] = useState([]);
   const [qbDepositAccount, setQBDepositAccount] = useState<Account>(onBoardingData.qbDepositAccount ?? {accountId: "", accountName: ""})
+  const [isGenerateMappingLoading, setIsGenerateMappingLoading] = useState(false)
 
   const [paymentMappingList, dispatch] = useReducer(reducer, onBoardingData.paymentMappingList ?? [{ WATender: '', QBTender: '', QBTenderId: ''}]);
 
@@ -83,6 +88,7 @@ export const PaymentConfigPage = () => {
       paymentMappingList,
       qbDepositAccount,
     });
+
   }, [paymentMappingList, qbDepositAccount]);
 
   const handleSubmission = async () => {
@@ -152,6 +158,53 @@ export const PaymentConfigPage = () => {
     return errors;
   };
 
+    const handleGenerateMapping = async () => {
+      try{
+        setErrorMsg('')
+        setIsGenerateMappingLoading(true)
+
+        const waTenders = `WA_Tenders: ${WildApricotTenders.filter((j, i) => i < 7).join(', ')}`;
+        const qbMethods = JSON.stringify(qbPaymentMethods.map(method => ({
+          name: method.Name,
+          ID: method.Id
+        })));
+
+        const prompt = `
+        ${waTenders}
+        QB_Payment_Methods: ${qbMethods}
+        `;
+
+        const instructions = `
+        You are a mapping assistant. 
+        When given:
+        - A comma-separated string of Wild Apricot (WA) tenders.
+        - An array of QuickBooks (QB) payment methods with "Name" and "ID" attributes.
+        
+        Map each WA tender to the matching QB "Name" and keep the corresponding "ID". 
+        Return the result as an array of objects in this format: 
+        [{ "WATender": "WA_tender_name", "QBTender": "QB_name", "QBTenderId": "QB_ID" }]. 
+
+        Ensure all WA payment methods are mapped to a QB payment method to the best of your ability.  
+        No explanations or commentary—only return the JSON output.
+        `;
+
+        const response = await generateMapping(prompt, instructions);
+
+        const { message } = response.data
+
+        dispatch({type: "SET_MAPPING", payload: message})
+        console.log(message)
+
+      }
+      catch (e){
+        setErrorMsg(e.response.data.message || "Error mapping with AI")
+      }
+      finally {
+        setIsGenerateMappingLoading(false)
+      }
+    }
+
+
   return (
     <PageTemplate
       title={'Payment Configuration'}
@@ -160,6 +213,7 @@ export const PaymentConfigPage = () => {
       validate={handleSubmission}
       errorMsg={errorMsg}
     >
+      <BlurryOverlay isLoading={isGenerateMappingLoading} message={isGenerateMappingLoading ? `Currently Mapping your Payment Method Fields. ` : errorMsg ? "Error Occurred!" : "Mapping Completed!"} icon={"stars"} subtitle={"Please wait while our system maps your field names ..."}/>
       <div className="default-payment-mapping">
         <h6>Default Payment Mapping</h6>
         <p className={'mb-3 mt-2'}>Map your QuickBooks payment deposit account to your QuickBooks receivables account by selecting each from the dropdowns below</p>
@@ -187,8 +241,18 @@ export const PaymentConfigPage = () => {
         </div>
       </div>
       <div className={'payment-mapping'}>
-        <h6>Payment Method Mapping</h6>
-        <p className={'mb-3'}>Map your WildApricot payment methods to one of your QuickBooks payment methods from the dropdown</p>
+
+        <div className={'d-flex justify-content-between align-items-center flex-wrap'}>
+          <div>
+            <h6>Payment Method Mapping</h6>
+            <p className={'mb-3'}>Map your WildApricot payment methods to one of your QuickBooks payment methods from the dropdown</p>
+          </div>
+          <button className={"ai-btn mb-3"} onClick={handleGenerateMapping}>
+            <i className={'bi bi-stars'} style={{color: 'black'}}></i>
+            Map with AI
+          </button>
+        </div>
+
         <AlternateMappingTable columns={tableColumns.payment} data={{WildApricotTenders, qbPaymentMethods}} mappingData={paymentMappingList} onMappingChange={handleMapping}/>
       </div>
     </PageTemplate>

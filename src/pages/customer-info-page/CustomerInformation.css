@@ -30,13 +30,6 @@
     transition: background-color 0.5s ease-out;
 }
 
-.ai-button{
-    border-radius: 50px;
-    background: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
-    color: #727272;
-    font-weight: normal;
-}
-
 .ai-btn {
     position: relative;
     display: inline-flex;
@@ -54,6 +47,7 @@
     transition: transform 0.2s;
     /*background: linear-gradient(to bottom, #6837c9, #9d88c9);*/
     border-radius: 50px;
+    white-space: nowrap;
 }
 
 /* Gradient border */
