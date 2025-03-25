@@ -43,7 +43,12 @@ const reducer = (state, action) => {
           : row
       );
     case "SET_MAPPING":
-        return action.payload
+      if (!Array.isArray(action.payload)) {
+        console.error("SET_MAPPING payload is not an array:", action);
+        return state;
+      }
+
+      return action.payload
     default:
       return state;
   }
