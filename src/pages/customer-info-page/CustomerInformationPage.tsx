@@ -83,9 +83,7 @@ export const CustomerInformationPage = () => {
       }
     }
 
-    getAccountInfo().then(response => {
-
-    });
+    getAccountInfo()
 
   }, []);
 

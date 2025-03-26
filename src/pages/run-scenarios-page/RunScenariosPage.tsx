@@ -61,7 +61,7 @@ export const RunScenariosPage = () => {
             scenarioId: scenario.id,
             numOfRuns: logResponse.data.filter(log => log.type == "manual" || log.type == "auto" || log.type == "start").length || 0,
             lastRun: logResponse.data.find(log => log.type == "manual" || log.type == "auto" || log.type == "start")?.timestamp || null,
-            isCompleted: logResponse.data[0].type == 'manual' || logResponse.data[0].type == 'auto' || logResponse.data[0].type == 'start',
+            isCompleted: logResponse.data[0]?.type == 'manual' || logResponse.data[0]?.type == 'auto' || logResponse.data[0]?.type == 'start',
             isSuccessful: logResponse.data.find(log => log.type == "manual" || log.type == "auto" || log.type == "start")?.status !== 3 ,
             subtitle,
             title: scenario.name,

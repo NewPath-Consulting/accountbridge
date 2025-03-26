@@ -12,6 +12,7 @@ import {updateDataRecord} from "../../services/api/make-api/dataStructuresServic
 import {formatInvoiceConfig, formatPaymentConfig} from "../../utils/formatter.ts";
 import {BlurryOverlay} from "../../components/cloning-animation/BlurryOverlay.tsx";
 import {generateMapping} from "../../services/api/generate-mapping-api/generateMapping.ts";
+import {useToast} from "react-toastify";
 
 export interface PaymentConfig {
   WATender: string,
@@ -63,7 +64,7 @@ export const PaymentConfigPage = () => {
   const [depositAccountsList, setDepositAccountsList] = useState([]);
   const [qbDepositAccount, setQBDepositAccount] = useState<Account>(onBoardingData.qbDepositAccount ?? {accountId: "", accountName: ""})
   const [isGenerateMappingLoading, setIsGenerateMappingLoading] = useState(false)
-
+  const [isTendersLoading, setTendersLoading] = useState(true);
   const [paymentMappingList, dispatch] = useReducer(reducer, onBoardingData.paymentMappingList ?? [{ WATender: '', QBTender: '', QBTenderId: ''}]);
 
   const errorRef = useRef(null)
@@ -71,22 +72,38 @@ export const PaymentConfigPage = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    fetchData("select * from paymentmethod", setQBPaymentMethods, "PaymentMethod", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
-    fetchData("select * from account where AccountType IN ('Other Current Asset', 'Bank')", setDepositAccountsList, "Account", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
 
-    const listTenders = async () => {
+    const getAllTenders = async() => {
+
       try{
-        const tenders = await getTenders(onBoardingData.generalInfo.accountId || '221748')
-        setWildApricotTenders(tenders.data.map(tender => tender.Name))
+        await Promise.all([
+          fetchData("select * from paymentmethod", setQBPaymentMethods, "PaymentMethod", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl),
+          fetchData("select * from account where AccountType IN ('Other Current Asset', 'Bank')", setDepositAccountsList, "Account", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl),
+          listWATenders()
+        ])
       }
       catch (e){
-        setWildApricotTenders([]);
         setErrorMsg(e.response.data.error)
+      }
+      finally {
+        setTendersLoading(false)
       }
     }
 
-    listTenders()
+    getAllTenders()
+
   }, []);
+
+  const listWATenders = async () => {
+    try{
+      const tenders = await getTenders(onBoardingData.generalInfo.accountId)
+      setWildApricotTenders(tenders.data.map(tender => tender.Name))
+    }
+    catch (e){
+      setWildApricotTenders([]);
+      setErrorMsg(e.response.data.error)
+    }
+  }
 
   useEffect(() => {
     updateData({
@@ -219,6 +236,7 @@ export const PaymentConfigPage = () => {
       errorMsg={errorMsg}
     >
       <BlurryOverlay isLoading={isGenerateMappingLoading} message={isGenerateMappingLoading ? `Currently Mapping your Payment Method Fields. ` : errorMsg ? "Error Occurred!" : "Mapping Completed!"} icon={"stars"} subtitle={"Please wait while our system maps your field names ..."}/>
+
       <div className="default-payment-mapping">
         <h6>Default Payment Mapping</h6>
         <p className={'mb-3 mt-2'}>Map your QuickBooks payment deposit account to your QuickBooks receivables account by selecting each from the dropdowns below</p>
