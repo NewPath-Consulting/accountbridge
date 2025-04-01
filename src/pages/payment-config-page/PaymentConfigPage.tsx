@@ -239,7 +239,7 @@ export const PaymentConfigPage = () => {
 
       <div className="default-payment-mapping">
         <h6>Default Payment Mapping</h6>
-        <p className={'mb-3 mt-2'}>Map your QuickBooks payment deposit account to your QuickBooks receivables account by selecting each from the dropdowns below</p>
+        <p className={'mb-3 mt-2'}>Select a QuickBooks deposit account to record payments received from WildApricot transactions</p>
         <div className="row">
           <div className={'col-md-6'}>
             <div className="input-group mb-3">
@@ -268,7 +268,7 @@ export const PaymentConfigPage = () => {
         <div className={'d-flex justify-content-between align-items-center flex-wrap'}>
           <div>
             <h6>Payment Method Mapping</h6>
-            <p className={'mb-3'}>Map your WildApricot payment methods to one of your QuickBooks payment methods from the dropdown</p>
+            <p className={'mb-3'}>Map Wild Apricot payment methods to QuickBooks payment methods by selecting from the dropdown to ensure accurate transaction processing.</p>
           </div>
           <button className={"ai-btn mb-3"} onClick={handleGenerateMapping}>
             <i className={'bi bi-stars'} style={{color: 'black'}}></i>

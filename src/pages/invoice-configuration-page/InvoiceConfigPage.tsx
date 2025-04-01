@@ -410,7 +410,7 @@ export const InvoiceConfigPage = () => {
           <div className={'default product'} >
             <div className={'membership-level-table'}>
               <h6>Default Membership Level Mapping</h6>
-              <p className={'mb-3 mt-2'}>Map your WildApricot membership levels to one of your products by selecting a QuickBooks product from the drop down</p>
+              <p className={'mb-3 mt-2'}>Map your Wild Apricot membership levels to a QuickBooks product by selecting from the dropdown. This will be used as the default if no alternate mapping is set.</p>
               <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]}  defaultData={defaultMembershipProduct} QBProducts={products}  onMappingChange={(payload) => handleDefaultMapping(payload, "membership")}/>
             </div>
           </div>
@@ -418,7 +418,7 @@ export const InvoiceConfigPage = () => {
             <div className={'d-flex justify-content-between align-items-center flex-wrap'}>
               <div>
                 <h6>Alternate Membership Level Mapping</h6>
-                <p className={'mb-3 mt-2'}>Map your WildApricot membership levels to one of your products by selecting a QuickBooks product from the drop down</p>
+                <p className={'mb-3 mt-2'}>Map specific Wild Apricot membership levels to different QuickBooks products by adding as many mappings as needed. If a level isn’t mapped here, the default will be used.</p>
               </div>
               <button className={"ai-btn mb-3"} onClick={() => handleGenerateMapping({ name: 'membership', WAFields: membershipLevels})}>
                 <i className={'bi bi-stars'} style={{color: 'black'}}></i>
@@ -430,7 +430,7 @@ export const InvoiceConfigPage = () => {
           <div className={'default product'} >
             <div className={'event-registration-table'}>
               <h6>Default Event Registration Mapping</h6>
-              <p className={'mb-3 mt-2'}>Map your WildApricot membership levels to one of your products by selecting a QuickBooks product from the drop down</p>
+              <p className={'mb-3 mt-2'}>Map your Wild Apricot event registrations to a QuickBooks product by selecting from the dropdown. This will be used as the default if no alternate mapping is set.</p>
               <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]} QBProducts={products} defaultData={defaultEventProduct} onMappingChange={(payload) => handleDefaultMapping(payload, "event")}/>
             </div>
           </div>
@@ -438,7 +438,7 @@ export const InvoiceConfigPage = () => {
             <div className={'d-flex justify-content-between align-items-center flex-wrap'}>
               <div>
                 <h6>Alternate Event Registration Mapping</h6>
-                <p className={'mb-3 mt-2'}>Map your WildApricot events to one of your products by selecting a QuickBooks product from the drop down</p>
+                <p className={'mb-3 mt-2'}>Map specific Wild Apricot event registrations to different QuickBooks products by adding as many mappings as needed. If a registration isn’t mapped here, the default will be used.</p>
               </div>
               <button className={"ai-btn mb-3"} onClick={() => handleGenerateMapping({ name: 'event', WAFields: eventTags})}>
                 <i className={'bi bi-stars'} style={{color: 'black'}}></i>
@@ -450,7 +450,7 @@ export const InvoiceConfigPage = () => {
           <div className={'default product'} >
             <div className={'online-store-table'}>
               <h6>Default Online Store Mapping</h6>
-              <p className={'mb-3 mt-2'}>Map your WildApricot product tags to one of your QuickBooks products by selecting a QuickBooks product from the drop down</p>
+              <p className={'mb-3 mt-2'}>Map your Wild Apricot online store purchases to a QuickBooks product by selecting from the dropdown. This will be used as the default if no alternate mapping is set.</p>
               <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]} defaultData={defaultStoreProduct} QBProducts={products} onMappingChange={(payload) => handleDefaultMapping(payload, "store")}/>
             </div>
           </div>

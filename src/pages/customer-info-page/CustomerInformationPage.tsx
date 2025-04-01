@@ -33,6 +33,7 @@ export const CustomerInformationPage = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [fieldNames, setFieldNames] = useState([]);
   const [isGenerateMappingLoading, setIsGenerateMappingLoading] = useState(false)
+  const [isContentLoading, setIsContentLoading] = useState(false);
 
   const [formData, setFormData] = useState<ICustomerInfo>({
     city: "",
@@ -69,6 +70,7 @@ export const CustomerInformationPage = () => {
 
     const getAccountInfo = async() => {
       try{
+        setIsContentLoading(true)
         const userInfo = await getWildApricotAccounts();
         const { Id } = userInfo.data[0]
 
@@ -80,6 +82,9 @@ export const CustomerInformationPage = () => {
       catch(e){
         setErrorMsg("Error loading data from Wild Apricot: Invalid Token")
         console.log(e)
+      }
+      finally {
+        setIsContentLoading(false)
       }
     }
 
@@ -172,33 +177,36 @@ export const CustomerInformationPage = () => {
 
   return (
     <PageTemplate
-      title={'Customer Information'}
-      subTitle={'Provide your company details to personalize and streamline your integration experience.'}
+      title={'Contact Configuration'}
+      subTitle={'Map Customer Contact Fields for QuickBooks Transactions'}
       validate={handleSubmit}
       errorMsg={errorMsg}
     >
       <BlurryOverlay isLoading={isGenerateMappingLoading} message={isGenerateMappingLoading ? `Currently Mapping your Customer Information Fields. ` : errorMsg ? "Error Occurred!" : "Mapping Completed!"} icon={"stars"} subtitle={"Please wait while our system maps your field names ..."}/>
       <div>
         <div className={'d-flex justify-content-between align-items-center flex-wrap'}>
-          <h5 className={'mb-4'}>Wild Apricot Information</h5>
+          <div className={'mb-4'}>
+            <h5 >Wild Apricot Information</h5>
+            <p>Select a Wild Apricot field from the dropdown to match your custom label and ensure correct customer details in QuickBooks.</p>
+          </div>
           <button className={"ai-btn"} onClick={handleGenerateMapping}>
             <i className={'bi bi-stars'} style={{color: 'black'}}></i>
             Map with AI
           </button>
         </div>
         <div className={"form-content"}>
-          <div className="row ">
+          <div className="row">
             <div className="col-md-6 mb-3">
               <h6>Company Info <i className={'bi bi-person-circle ms-2'}></i></h6>
-              <p>Provide your company info</p>
+              <p>Map labels related to company info</p>
             </div>
             <div className="col-md-6 mb-3">
               <div className="row">
-                <div className="col mb-3">
-                  <label htmlFor="userId" className="form-label">User ID</label>
-                  <div className="input-group" defaultValue={"Choose Field Name"}>
-                    <select className="form-select" onChange={handleChange} id="userId" value={formData.userId}>
-                      <option value={""} disabled={true}>Choose Field Name</option>
+                <div className="col mb-3 placeholder-glow">
+                  <label htmlFor="userId" className={`form-label ${isContentLoading ? 'placeholder' : ''}`}>User ID</label>
+                  <div className="input-group placeholder-glow" defaultValue={"Choose Field Name"}>
+                    <select className={`form-select ${isContentLoading ? 'placeholder' : ''}`} onChange={handleChange} id="userId" value={formData.userId}>
+                      <option value={""} hidden={isContentLoading} disabled={true}>Choose Field Name</option>
                       {
                         fieldNames.map(name => {
                           return <option key={name.Id} value={name.FieldName}>{name.FieldName}</option>
@@ -209,11 +217,11 @@ export const CustomerInformationPage = () => {
                   <p style={{color: 'red'}}>{formErrors.userId}</p>
 
                 </div>
-                <div className="col">
-                  <label htmlFor="organization" className="form-label">Organization</label>
-                  <div className="input-group" defaultValue={"Choose Field Name"}>
-                    <select className="form-select" onChange={handleChange} id="organization" value={formData.organization}>
-                      <option value={""} disabled={true}>Choose Field Name</option>
+                <div className="col placeholder-glow">
+                  <label htmlFor="organization" className={`form-label ${isContentLoading ? 'placeholder' : ''}`}>Organization</label>
+                  <div className="input-group placeholder-glow" defaultValue={"Choose Field Name"}>
+                    <select className={`form-select ${isContentLoading ? 'placeholder' : ''}`} onChange={handleChange} id="organization" value={formData.organization}>
+                      <option value={""} hidden={isContentLoading} disabled={true}>Choose Field Name</option>
                       {
                         fieldNames.map(name => {
                           return <option key={name.Id} value={name.FieldName}>{name.FieldName}</option>
@@ -226,11 +234,11 @@ export const CustomerInformationPage = () => {
               </div>
 
               <div className="row">
-                <div className="col">
-                  <label htmlFor="firstName" className="form-label ">First Name</label>
-                  <div className="input-group" defaultValue={"Choose Field Name"}>
-                    <select className="form-select" onChange={handleChange} id="firstName" value={formData.firstName}>
-                      <option value={""} disabled={true}>Choose Field Name</option>
+                <div className="col placeholder-glow">
+                  <label htmlFor="firstName" className={`form-label ${isContentLoading ? 'placeholder' : ''}`}>First Name</label>
+                  <div className="input-group placeholder-glow" defaultValue={"Choose Field Name"}>
+                    <select className={`form-select ${isContentLoading ? 'placeholder' : ''}`} onChange={handleChange} id="firstName" value={formData.firstName}>
+                      <option value={""} hidden={isContentLoading} disabled={true}>Choose Field Name</option>
                       {
                         fieldNames.map(name => {
                           return <option key={name.Id} value={name.FieldName}>{name.FieldName}</option>
@@ -241,11 +249,11 @@ export const CustomerInformationPage = () => {
                   <p style={{color: 'red'}}>{formErrors.firstName}</p>
 
                 </div>
-                <div className="col">
-                  <label htmlFor="lastName" className="form-label ">Last Name</label>
-                  <div className="input-group" defaultValue={"Choose Field Name"}>
-                    <select className="form-select" onChange={handleChange}  id="lastName" value={formData.lastName}>
-                      <option value={""} disabled={true}>Choose Field Name</option>
+                <div className="col placeholder-glow">
+                  <label htmlFor="lastName" className={`form-label ${isContentLoading ? 'placeholder' : ''}`}>Last Name</label>
+                  <div className="input-group placeholder-glow" defaultValue={"Choose Field Name"}>
+                    <select className={`form-select ${isContentLoading ? 'placeholder' : ''}`}onChange={handleChange}  id="lastName" value={formData.lastName}>
+                      <option value={""} hidden={isContentLoading} disabled={true}>Choose Field Name</option>
                       {
                         fieldNames.map(name => {
                           return <option key={name.Id} value={name.FieldName}>{name.FieldName}</option>
@@ -261,14 +269,14 @@ export const CustomerInformationPage = () => {
           <div className="row ">
             <div className="col-md-6 mb-3">
               <h6>Contact Info <i className={'bi bi-send-fill ms-2'}></i></h6>
-              <p>Provide your contact info</p>
+              <p>Map labels related to contact info</p>
             </div>
             <div className="col-md-6 mb-3">
-              <div className="mb-3">
-                <label htmlFor="email" className="form-label ">Email Address</label>
-                <div className="input-group"  defaultValue={"Choose Field Name"}>
-                  <select className="form-select" onChange={handleChange} id="email" value={formData.email}>
-                    <option value={""} disabled={true}>Choose Field Name</option>
+              <div className="mb-3 placeholder-glow">
+                <label htmlFor="email" className={`form-label ${isContentLoading ? 'placeholder' : ''}`}>Email Address</label>
+                <div className="input-group placeholder-glow"  defaultValue={"Choose Field Name"}>
+                  <select className={`form-select ${isContentLoading ? 'placeholder' : ''}`} onChange={handleChange} id="email" value={formData.email}>
+                    <option value={""} hidden={isContentLoading} disabled={true}>Choose Field Name</option>
                     {
                       fieldNames.map(name => {
                         return <option key={name.Id} value={name.FieldName}>{name.FieldName}</option>
@@ -278,11 +286,11 @@ export const CustomerInformationPage = () => {
                 </div>
                 <p style={{color: 'red'}}>{formErrors.email}</p>
               </div>
-              <div className="mb-3">
-                <label htmlFor="phoneNumber" className="form-label ">Phone Number</label>
-                <div className="input-group" defaultValue={"Choose Field Name"}>
-                  <select className="form-select" onChange={handleChange} id="phoneNumber" value={formData.phoneNumber}>
-                    <option value={""} disabled={true}>Choose Field Name</option>
+              <div className="mb-3 placeholder-glow">
+                <label htmlFor="phoneNumber" className={`form-label ${isContentLoading ? 'placeholder' : ''}`}>Phone Number</label>
+                <div className="input-group placeholder-glow" defaultValue={"Choose Field Name"}>
+                  <select className={`form-select ${isContentLoading ? 'placeholder' : ''}`} onChange={handleChange} id="phoneNumber" value={formData.phoneNumber}>
+                    <option value={""} hidden={isContentLoading} disabled={true}>Choose Field Name</option>
                     {
                       fieldNames.map(name => {
                         return <option key={name.Id} value={name.FieldName}>{name.FieldName}</option>
@@ -298,15 +306,15 @@ export const CustomerInformationPage = () => {
           <div className="row ">
             <div className="col-md-6 mb-3">
               <h6>Location Info <i className={'bi bi-geo-alt-fill ms-2'}></i></h6>
-              <p>Provide your company location</p>
+              <p>Map labels related to company location</p>
             </div>
             <div className="col-md-6 mb-3">
               <div className="row">
-                <div className="col mb-3">
-                  <label htmlFor="address" className="form-label ">Street Address</label>
-                  <div className="input-group " defaultValue={"Choose Field Name"}>
-                    <select className="form-select" onChange={handleChange} id="address" value={formData.address}>
-                      <option value={""} disabled={true}>Choose Field Name</option>
+                <div className="col mb-3 placeholder-glow">
+                  <label htmlFor="address" className={`form-label ${isContentLoading ? 'placeholder' : ''}`}>Street Address</label>
+                  <div className="input-group placeholder-glow" defaultValue={"Choose Field Name"}>
+                    <select className={`form-select ${isContentLoading ? 'placeholder' : ''}`} onChange={handleChange} id="address" value={formData.address}>
+                      <option value={""} hidden={isContentLoading} disabled={true}>Choose Field Name</option>
                       {
                         fieldNames.map(name => {
                           return <option key={name.Id} value={name.FieldName}>{name.FieldName}</option>
@@ -317,11 +325,11 @@ export const CustomerInformationPage = () => {
                   <p style={{color: 'red'}}>{formErrors.address}</p>
 
                 </div>
-                <div className="col">
-                  <label htmlFor="country" className=" form-label">Country</label>
-                  <div className="input-group " defaultValue={"Choose Field Name"}>
-                    <select className="form-select" onChange={handleChange} id="country" value={formData.country}>
-                      <option value={""} disabled={true}>Choose Field Name</option>
+                <div className="col placeholder-glow">
+                  <label htmlFor="country" className={`form-label ${isContentLoading ? 'placeholder' : ''}`}>Country</label>
+                  <div className="input-group placeholder-glow" defaultValue={"Choose Field Name"}>
+                    <select className={`form-select ${isContentLoading ? 'placeholder' : ''}`} onChange={handleChange} id="country" value={formData.country}>
+                      <option value={""} hidden={isContentLoading} disabled={true}>Choose Field Name</option>
                       {
                         fieldNames.map(name => {
                           return <option key={name.Id} value={name.FieldName}>{name.FieldName}</option>
@@ -333,11 +341,11 @@ export const CustomerInformationPage = () => {
                 </div>
               </div>
               <div className="row">
-                <div className="col">
-                  <label htmlFor="state" className="form-label ">State</label>
-                  <div className="input-group " defaultValue={"Choose Field Name"}>
-                    <select className="form-select" onChange={handleChange} id="state" value={formData.state}>
-                      <option value={""} disabled={true}>Choose Field Name</option>
+                <div className="col placeholder-glow">
+                  <label htmlFor="state" className={`form-label ${isContentLoading ? 'placeholder' : ''}`}>State</label>
+                  <div className="input-group placeholder-glow" defaultValue={"Choose Field Name"}>
+                    <select className={`form-select ${isContentLoading ? 'placeholder' : ''}`} onChange={handleChange} id="state" value={formData.state}>
+                      <option value={""} hidden={isContentLoading} disabled={true}>Choose Field Name</option>
                       {
                         fieldNames.map(name => {
                           return <option key={name.Id} value={name.FieldName}>{name.FieldName}</option>
@@ -347,11 +355,11 @@ export const CustomerInformationPage = () => {
                   </div>
                   <p style={{color: 'red'}}>{formErrors.state}</p>
                 </div>
-                <div className="col">
-                  <label htmlFor="city" className="form-label ">City</label>
-                  <div className="input-group" defaultValue={"Choose Field Name"}>
-                    <select className="form-select" onChange={handleChange} id="city" value={formData.city}>
-                      <option value={""} disabled={true}>Choose Field Name</option>
+                <div className="col placeholder-glow">
+                  <label htmlFor="city" className={`form-label ${isContentLoading ? 'placeholder' : ''}`}>City</label>
+                  <div className="input-group placeholder-glow" defaultValue={"Choose Field Name"}>
+                    <select className={`form-select ${isContentLoading ? 'placeholder' : ''}`} onChange={handleChange} id="city" value={formData.city}>
+                      <option value={""} hidden={isContentLoading} disabled={true}>Choose Field Name</option>
                       {
                         fieldNames.map(name => {
                           return <option key={name.Id} value={name.FieldName}>{name.FieldName}</option>
@@ -369,16 +377,16 @@ export const CustomerInformationPage = () => {
 
         <h5 className={"mt-4 mb-4"}>Quickbooks Information</h5>
         <div className="form-content">
-          <div className="row ">
+          <div className="row ms-0 me-0">
             <div className="col-md-6 mb-3">
               <h6>Display Name</h6>
               <p>Choose your Display Name by selecting one of your contact fields</p>
             </div>
             <div className="col-md-6 mb-3">
               <div className="col">
-                <div className="input-group" defaultValue={"Choose Field Name"}>
-                  <select className="form-select" onChange={handleChange} value={formData.displayName} id="displayName">
-                    <option value={""} disabled={true}>Choose Field Name</option>
+                <div className="input-group placeholder-glow" defaultValue={"Choose Field Name"}>
+                  <select className={`form-select ${isContentLoading ? 'placeholder' : ''}`} onChange={handleChange} value={formData.displayName} id="displayName">
+                    <option value={""} hidden={isContentLoading} disabled={true}>Choose Field Name</option>
                     <option value={'{Full Name}'}>FullName</option>
                     <option value={'{Organization}'}>Organization</option>
                     <option value={'{Display Name}'}>Display Name</option>

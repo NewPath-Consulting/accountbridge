@@ -187,14 +187,14 @@ export const DonationConfigPage = () => {
   return (
     <PageTemplate
       title={'Donation Configuration'}
-      subTitle={'Review your mapping configurations and confirm to start cloning scenarios into your Make.com account'}
+      subTitle={'Easily match donation fields from Wild Apricot to QuickBooks for a smooth and accurate integration process.'}
       backUrl={'/payment-config'}
       validate={handleSubmission}
       errorMsg={errorMsg}
     >
       <div className={'generic-default-donation'}>
         <h6>Donation General Mapping</h6>
-        <p className={'mb-3 mt-2'}>Choose your QuickBooks fields below where default mapping will occur</p>
+        <p className={'mb-3 mt-2'}>Choose your donation campaign name and donation comment from the dropdowns below.</p>
         <div className="row">
           <div className="col-md-6 col-sm-12 mb-3">
             <select
@@ -235,14 +235,14 @@ export const DonationConfigPage = () => {
       <div className={'default product'} >
         <div className={'default-donation-table'}>
           <h6>Default Donation Mapping</h6>
-          <p className={'mb-3 mt-2'}>Choose your QuickBooks fields below where default mapping will occur</p>
+          <p className={'mb-3 mt-2'}>Select a QuickBooks deposit account and product for all Wild Apricot donations. This will be used as the default if no alternate mapping is set.</p>
           <ExtendedMappingTable<DonationMapping> classesList={onBoardingData.hasClasses ? classes : undefined} headers={["Deposit Account", "QB Product", "Income Account", ...(onBoardingData.hasClasses ? ["Class"] : [])]} QBProducts={products} onMappingChange={handleChange} defaultData={defaultDonationMapping} depositAccountList={accountList}/>
         </div>
       </div>
       <div className={'default product'} >
         <div className={'default-donation-table'}>
           <h6>Donation Mapping</h6>
-          <p className={'mb-3 mt-2'}>Choose your QuickBooks fields below where default mapping will occur</p>
+          <p className={'mb-3 mt-2'}>Map specific Wild Apricot donation types to different QuickBooks products by adding as many mappings as needed. If a donation isn’t mapped here, the default will be used.</p>
           <AlternateMappingTable columns={[...tableColumns.donations, ...(onBoardingData.hasClasses ? tableColumns.classes : [])]} data={{accountList, products, campaignOptions: campaignList.map(val => val.Label), classes}} mappingData={donationMappingList} onMappingChange={(type, payload) => dispatchDonationMappingList({type, payload})}/>
         </div>
       </div>

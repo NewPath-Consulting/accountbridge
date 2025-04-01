@@ -4,10 +4,9 @@
     color: #9C9C9C;
 }
 
-.form-content select {
-    background-color: #ffffff;
+h5 + p{
+    color: #9C9C9C;
 }
-
 
 .form-content > *{
     border-bottom: 1px solid var(--border-color);
