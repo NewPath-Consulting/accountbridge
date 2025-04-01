@@ -77,6 +77,7 @@ export const SchedulingPage = () => {
   const [invoiceScheduling, dispatchInvoice] = useReducer(schedulingReducer, onBoardingData.invoiceScheduling ??  initialState, init);
   const [paymentScheduling, dispatchPayment] = useReducer(schedulingReducer, onBoardingData.paymentScheduling ?? initialState, init);
   const [donationScheduling, dispatchDonation] = useReducer(schedulingReducer, onBoardingData.donationScheduling ?? initialState, init);
+  const [isSaving, setIsSaving] = useState(false);
 
   const invoiceConfigurations: InvoiceConfiguration[] = [
     {
@@ -124,6 +125,8 @@ export const SchedulingPage = () => {
   const handleSubmission = async () => {
 
     try{
+      setIsSaving(true);
+
       await updateOnboardingStep('/scheduling', { invoiceScheduling, donationScheduling, paymentScheduling })
 
       await updateDataRecord('ca72cb0afc44', onBoardingData.teamId, {
@@ -147,6 +150,9 @@ export const SchedulingPage = () => {
     catch (e){
       setErrorMsg(e.message || "Error updating scheduling data")
     }
+    finally {
+      setIsSaving(false);
+    }
 
   }
 
@@ -157,6 +163,7 @@ export const SchedulingPage = () => {
       backUrl={'/donation-config'}
       validate={handleSubmission}
       errorMsg={errorMsg}
+      isLoading={isSaving}
     >
       <SchedulingComponent title={'Invoice'} schedulingData={invoiceScheduling} dispatch={dispatchInvoice}/>
       <SchedulingComponent title={'Payment'} schedulingData={paymentScheduling} dispatch={dispatchPayment}/>

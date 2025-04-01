@@ -42,6 +42,8 @@ export const InvoiceConfigPage = () => {
   const [productTags, setProductTags] = useState(["Delivery"]);
   const [accountReceivable, setAccountReceivable] = useState(onBoardingData.accountReceivable ?? {accountId: "", accountName: ""});
   const [isGenerateMappingLoading, setIsGenerateMappingLoading] = useState(false)
+  const [isContentLoading, setIsContentLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false);
 
   const [defaultMembershipProduct, setDefaultMembershipProduct] = useState<InvoiceMapping>(onBoardingData.defaultMembershipProduct ?? {QBProduct: "", QBProductId: "", IncomeAccount: "", class: "", classId: ""});
   const [defaultEventProduct, setDefaultEventProduct] = useState<InvoiceMapping>(onBoardingData.defaultEventProduct ?? {QBProduct: "", QBProductId: "", IncomeAccount: "", class: "", classId: ""});
@@ -56,6 +58,7 @@ export const InvoiceConfigPage = () => {
 
     const fetchAllData = async () => {
       try {
+        setIsContentLoading(true)
         // QB data fetching
         await Promise.all([
           fetchData("select * from item", setProducts, "Item", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl),
@@ -95,6 +98,9 @@ export const InvoiceConfigPage = () => {
       } catch (error) {
         console.error("Error fetching data:", error);
         setErrorMsg(error?.message || "Failed to fetch data");
+      }
+      finally {
+        setIsContentLoading(false)
       }
     };
 
@@ -236,7 +242,7 @@ export const InvoiceConfigPage = () => {
       { name: "Online Store Mapping", list: onlineStoreMappingList, options: productTags }
     ];
 
-    alternateMappings.forEach(({ name, list, options }) => {
+    alternateMappings.forEach(({ name, list, _ }) => {
       list.forEach((row, index) => {
         if (!row.WAFieldName || !row.QBProductId || !row.QBProduct || (hasClasses && !row.class)) {
           errors.push(`Row ${index + 1} in ${name} is incomplete.`);
@@ -253,6 +259,8 @@ export const InvoiceConfigPage = () => {
 
   const handleSubmission = async () => {
     try{
+      setIsSaving(true);
+
       const errors = validateConfig();
 
       if (errors.length > 0) {
@@ -284,6 +292,9 @@ export const InvoiceConfigPage = () => {
     }
     catch (e){
       setErrorMsg(e.message || "Cannot save data")
+    }
+    finally {
+      setIsSaving(false)
     }
 
   }
@@ -379,21 +390,26 @@ export const InvoiceConfigPage = () => {
       backUrl={'/customer-information'}
       validate={handleSubmission}
       errorMsg={errorMsg}
+      isLoading={isSaving}
     >
       <BlurryOverlay isLoading={isGenerateMappingLoading} message={isGenerateMappingLoading ? `Currently Mapping your Invoice Fields. ` : errorMsg ? "Error Occurred!" : "Mapping Completed!"} icon={"stars"} subtitle={"Please wait while our system maps your field names ..."}/>
       <div id={'content'}>
-          <div className={'accounts-receivable mb-5'} >
+          <div className={'accounts-receivable mb-5 placeholder-glow'} >
             <h6>QuickBooks Receivable Account for Invoices</h6>
             <p className={'mb-3 mt-2'}>Please select your Accounts Receivable account name below</p>
-            <div className="input-group mb-3" style={{maxWidth: '500px'}}>
-              <label className="input-group-text" htmlFor="inputAccountsReceivable"><i className={'bi bi-receipt'}></i></label>
-              <select className="form-select" id="inputAccountsReceivable" value={accountReceivable.accountId} onChange={handleAccountSelection}>
-                <option value={""}>Choose Receivable Account</option>
-                {accountList.map(account => {
-                  return <option key={account.Id} value={account.Id}>{account.Name}</option>
-                })}
-              </select>
-            </div>
+            {!isContentLoading ?
+              <div className="input-group mb-3" style={{maxWidth: '500px'}}>
+                <label className="input-group-text" htmlFor="inputAccountsReceivable"><i className={'bi bi-receipt'}></i></label>
+                <select className="form-select" id="inputAccountsReceivable" value={accountReceivable.accountId}
+                        onChange={handleAccountSelection}>
+                  <option value={""}>Choose Receivable Account</option>
+                  {accountList.map(account => {
+                    return <option key={account.Id} value={account.Id}>{account.Name}</option>
+                  })}
+                </select>
+              </div> :
+              <span className="placeholder p-3 rounded-2 col-12" style={{maxWidth: '500px'}}></span>
+            }
           </div>
           <div className={'quickbooks-class mb-5'} >
             <h6>QuickBooks Classes</h6>
@@ -411,7 +427,7 @@ export const InvoiceConfigPage = () => {
             <div className={'membership-level-table'}>
               <h6>Default Membership Level Mapping</h6>
               <p className={'mb-3 mt-2'}>Map your Wild Apricot membership levels to a QuickBooks product by selecting from the dropdown. This will be used as the default if no alternate mapping is set.</p>
-              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]}  defaultData={defaultMembershipProduct} QBProducts={products}  onMappingChange={(payload) => handleDefaultMapping(payload, "membership")}/>
+              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]}  defaultData={defaultMembershipProduct} QBProducts={products}  onMappingChange={(payload) => handleDefaultMapping(payload, "membership")} isContentLoading={isContentLoading}/>
             </div>
           </div>
           <div className={'membership-level-table mb-4'}>
@@ -425,13 +441,13 @@ export const InvoiceConfigPage = () => {
                 Map with AI
               </button>
             </div>
-            <AlternateMappingTable columns={[...tableColumns.membershipLevels, ...(hasClasses ? tableColumns.classes : [])]} onMappingChange={(actionType, actionPayload) => handleMapping(actionType, actionPayload, "membership")} mappingData={membershipLevelMappingList} data={{products, membershipLevels, classes}}/>
+            <AlternateMappingTable columns={[...tableColumns.membershipLevels, ...(hasClasses ? tableColumns.classes : [])]} onMappingChange={(actionType, actionPayload) => handleMapping(actionType, actionPayload, "membership")} mappingData={membershipLevelMappingList} data={{products, membershipLevels, classes}} isContentLoading={isContentLoading}/>
           </div>
           <div className={'default product'} >
             <div className={'event-registration-table'}>
               <h6>Default Event Registration Mapping</h6>
               <p className={'mb-3 mt-2'}>Map your Wild Apricot event registrations to a QuickBooks product by selecting from the dropdown. This will be used as the default if no alternate mapping is set.</p>
-              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]} QBProducts={products} defaultData={defaultEventProduct} onMappingChange={(payload) => handleDefaultMapping(payload, "event")}/>
+              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]} QBProducts={products} defaultData={defaultEventProduct} onMappingChange={(payload) => handleDefaultMapping(payload, "event")} isContentLoading={isContentLoading}/>
             </div>
           </div>
           <div className={'event-registration-table mb-4'}>
@@ -445,13 +461,13 @@ export const InvoiceConfigPage = () => {
                 Map with AI
               </button>
             </div>
-            <AlternateMappingTable columns={[...tableColumns.events, ...(hasClasses ? tableColumns.classes : [])]} onMappingChange={(actionType, actionPayload) => handleMapping(actionType, actionPayload, "event")} mappingData={eventMappingList} data={{products, eventTags, classes}}/>
+            <AlternateMappingTable columns={[...tableColumns.events, ...(hasClasses ? tableColumns.classes : [])]} onMappingChange={(actionType, actionPayload) => handleMapping(actionType, actionPayload, "event")} mappingData={eventMappingList} data={{products, eventTags, classes}} isContentLoading={isContentLoading}/>
           </div>
           <div className={'default product'} >
             <div className={'online-store-table'}>
               <h6>Default Online Store Mapping</h6>
               <p className={'mb-3 mt-2'}>Map your Wild Apricot online store purchases to a QuickBooks product by selecting from the dropdown. This will be used as the default if no alternate mapping is set.</p>
-              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]} defaultData={defaultStoreProduct} QBProducts={products} onMappingChange={(payload) => handleDefaultMapping(payload, "store")}/>
+              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]} defaultData={defaultStoreProduct} QBProducts={products} onMappingChange={(payload) => handleDefaultMapping(payload, "store")} isContentLoading={isContentLoading}/>
             </div>
           </div>
           <div className={'online-store-table'}>
@@ -465,13 +481,13 @@ export const InvoiceConfigPage = () => {
                 Map with AI
               </button>
             </div>
-           <AlternateMappingTable columns={[...tableColumns.onlineStore, ...(hasClasses ? tableColumns.classes : [])]} onMappingChange={(actionType, actionPayload) => handleMapping(actionType, actionPayload, "store")} mappingData={onlineStoreMappingList} data={{products, productTags, classes}}/>
+           <AlternateMappingTable columns={[...tableColumns.onlineStore, ...(hasClasses ? tableColumns.classes : [])]} onMappingChange={(actionType, actionPayload) => handleMapping(actionType, actionPayload, "store")} mappingData={onlineStoreMappingList} data={{products, productTags, classes}} isContentLoading={isContentLoading}/>
           </div>
           <div className={'default product'} >
             <div className={'manual-invoice-table'}>
               <h6>Manual Invoice Mapping</h6>
               <p className={'mb-3 mt-2'}>This section is used to map your manually created invoices to a QuickBooks product.</p>
-              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]} defaultData={manualInvoiceMapping} QBProducts={products} onMappingChange={(payload) => handleDefaultMapping(payload, "manual")}/>
+              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]} defaultData={manualInvoiceMapping} QBProducts={products} onMappingChange={(payload) => handleDefaultMapping(payload, "manual")} isContentLoading={isContentLoading}/>
             </div>
           </div>
         </div>

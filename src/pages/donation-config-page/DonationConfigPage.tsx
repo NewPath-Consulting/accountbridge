@@ -37,8 +37,9 @@ const ExtendedMappingTable = (props: DepositDefaultMappingProps) => {
 
   return (
     <DefaultMappingTable {...props}>
-      <td>
-        <select
+      <td className={'placeholder-glow'}>
+        {props.isContentLoading ? <span className="placeholder p-3 rounded-2 col-12"></span> :
+          <select
           className="form-select"
           id={`qb-deposit-account`}
           value={props.defaultData.depositAccountId}
@@ -52,7 +53,7 @@ const ExtendedMappingTable = (props: DepositDefaultMappingProps) => {
               {option.Name}
             </option>
           ))}
-        </select>
+        </select>}
       </td>
     </DefaultMappingTable>
   );
@@ -74,6 +75,8 @@ export const DonationConfigPage = () => {
   const [donationCampaign, setDonationCampaign] = useState(onBoardingData.donationCampaign ?? {Id: "", FieldName: ""})
   const [donationComment, setDonationComment] = useState(onBoardingData.donationComment ?? {Id: "", FieldName: ""})
 
+  const [isContentLoading, setIsContentLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false);
   const [campaignList, setCampaignList] = useState([]);
 
   const [defaultDonationMapping, setDefaultDonationMapping] = useState<DonationMapping>(onBoardingData.defaultDonationMapping ?? {
@@ -91,27 +94,39 @@ export const DonationConfigPage = () => {
   const errorRef = useRef(null)
 
   useEffect(() => {
-    fetchData("select * from item", setProducts, "Item", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
-    fetchData("select * from class", setClasses, "Class", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
-    fetchData("select * from account where AccountType = 'Bank'", setAccountList, "Account", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl)
 
-
-
-    const listDonationFields = async () => {
+    const getAllData = async () => {
       try{
-        const donationFields = await getDonationFields(onBoardingData.generalInfo.accountId || '221748')
-        setDonationFields(donationFields.data)
+        setIsContentLoading(true)
+        await Promise.all([
+          fetchData("select * from item", setProducts, "Item", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl),
+          fetchData("select * from class", setClasses, "Class", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl),
+          fetchData("select * from account where AccountType = 'Bank'", setAccountList, "Account", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl),
+          listDonationFields()
+        ])
       }
       catch (e){
-        setDonationFields([]);
         setErrorMsg(e.response.data.error)
+      }
+      finally {
+        setIsContentLoading(false)
       }
     }
 
-    listDonationFields()
+    getAllData()
 
   }, []);
 
+  const listDonationFields = async () => {
+    try{
+      const donationFields = await getDonationFields(onBoardingData.generalInfo.accountId || '221748')
+      setDonationFields(donationFields.data)
+    }
+    catch (e){
+      setDonationFields([]);
+      setErrorMsg(e.response.data.error)
+    }
+  }
 
   useEffect(() => {
     const donationCampaignObj = donationFields.find(field => field.Id == donationCampaign.Id) ?? {
@@ -162,6 +177,8 @@ export const DonationConfigPage = () => {
 
   const handleSubmission = async () => {
     try{
+      setIsSaving(true);
+
       await updateOnboardingStep('/donation-config', { donationCampaign, donationComment, defaultDonationMapping, donationMappingList})
       await updateDataRecord('ca72cb0afc44', onBoardingData.teamId, {
         ...formatDonationConfig({
@@ -181,6 +198,9 @@ export const DonationConfigPage = () => {
     catch (e){
       setErrorMsg(e.message || "Cannot save donation mapping")
     }
+    finally {
+      setIsSaving(false)
+    }
 
   }
 
@@ -191,13 +211,15 @@ export const DonationConfigPage = () => {
       backUrl={'/payment-config'}
       validate={handleSubmission}
       errorMsg={errorMsg}
+      isLoading={isSaving}
     >
       <div className={'generic-default-donation'}>
         <h6>Donation General Mapping</h6>
         <p className={'mb-3 mt-2'}>Choose your donation campaign name and donation comment from the dropdowns below.</p>
         <div className="row">
-          <div className="col-md-6 col-sm-12 mb-3">
-            <select
+          <div className="col-md-6 col-sm-12 mb-3 placeholder-glow">
+            {isContentLoading ? <span className="placeholder p-3 rounded-2 w-100"></span> :
+              <select
               className="form-select"
               id={`wa-campaign`}
               value={donationCampaign.Id || ""}
@@ -211,24 +233,26 @@ export const DonationConfigPage = () => {
                   {option.FieldName}
                 </option>
               ))}
-            </select>
+            </select>}
           </div>
-          <div className="col-md-6 col-sm-12">
-            <select
-              className="form-select"
-              id={`wa-comment`}
-              value={donationComment.Id || ""}
-              onChange={(e) => handleFieldNameChange(e, "comment")}
-            >
-              <option value="">
-                Choose Donation Comment Field Name
-              </option>
-              {donationFields.map((option) => (
-                <option key={option.Id} value={option.Id}>
-                  {option.FieldName}
+          <div className="col-md-6 col-sm-12 placeholder-glow">
+            {isContentLoading ? <span className="placeholder p-3 rounded-2 w-100"></span> :
+              <select
+                className="form-select"
+                id={`wa-comment`}
+                value={donationComment.Id || ""}
+                onChange={(e) => handleFieldNameChange(e, "comment")}
+              >
+                <option value="">
+                  Choose Donation Comment Field Name
                 </option>
-              ))}
-            </select>
+                {donationFields.map((option) => (
+                  <option key={option.Id} value={option.Id}>
+                    {option.FieldName}
+                  </option>
+                ))}
+              </select>
+            }
           </div>
         </div>
       </div>
@@ -236,14 +260,14 @@ export const DonationConfigPage = () => {
         <div className={'default-donation-table'}>
           <h6>Default Donation Mapping</h6>
           <p className={'mb-3 mt-2'}>Select a QuickBooks deposit account and product for all Wild Apricot donations. This will be used as the default if no alternate mapping is set.</p>
-          <ExtendedMappingTable<DonationMapping> classesList={onBoardingData.hasClasses ? classes : undefined} headers={["Deposit Account", "QB Product", "Income Account", ...(onBoardingData.hasClasses ? ["Class"] : [])]} QBProducts={products} onMappingChange={handleChange} defaultData={defaultDonationMapping} depositAccountList={accountList}/>
+          <ExtendedMappingTable<DonationMapping> classesList={onBoardingData.hasClasses ? classes : undefined} headers={["Deposit Account", "QB Product", "Income Account", ...(onBoardingData.hasClasses ? ["Class"] : [])]} QBProducts={products} onMappingChange={handleChange} defaultData={defaultDonationMapping} depositAccountList={accountList} isContentLoading={isContentLoading}/>
         </div>
       </div>
       <div className={'default product'} >
         <div className={'default-donation-table'}>
           <h6>Donation Mapping</h6>
           <p className={'mb-3 mt-2'}>Map specific Wild Apricot donation types to different QuickBooks products by adding as many mappings as needed. If a donation isn’t mapped here, the default will be used.</p>
-          <AlternateMappingTable columns={[...tableColumns.donations, ...(onBoardingData.hasClasses ? tableColumns.classes : [])]} data={{accountList, products, campaignOptions: campaignList.map(val => val.Label), classes}} mappingData={donationMappingList} onMappingChange={(type, payload) => dispatchDonationMappingList({type, payload})}/>
+          <AlternateMappingTable columns={[...tableColumns.donations, ...(onBoardingData.hasClasses ? tableColumns.classes : [])]} data={{accountList, products, campaignOptions: campaignList.map(val => val.Label), classes}} mappingData={donationMappingList} onMappingChange={(type, payload) => dispatchDonationMappingList({type, payload})} isContentLoading={isContentLoading}/>
         </div>
       </div>
     </PageTemplate>

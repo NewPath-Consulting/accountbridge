@@ -27,6 +27,7 @@ export const RunScenariosPage = () => {
   const [errorMsg, setErrorMsg] = useState<string | string[]>('')
   const [scenarios, setScenarios] = useState<ScenarioRun[]>([]);
   const { onBoardingData } = useOnBoarding()
+  const [isContentLoading, setIsContentLoading] = useState(false)
 
   const handleSubmission = () => {
 
@@ -35,6 +36,7 @@ export const RunScenariosPage = () => {
   useEffect(() => {
     const listScenarios = async() => {
       try {
+        setIsContentLoading(true)
         const response = await getUserScenarios(onBoardingData.teamId)
 
         const scenarios: ScenarioRun[] = []
@@ -74,6 +76,9 @@ export const RunScenariosPage = () => {
       } catch (error) {
         console.error("Failed to activate scenarios:", error);
         setErrorMsg(error.response.data.message)
+      }
+      finally {
+        setIsContentLoading(false)
       }
     }
 
@@ -166,7 +171,14 @@ export const RunScenariosPage = () => {
       </div>
       <div>
         <div className="row g-3">
-          {scenarios.map((scenario, i) => <RunScenarioComponent key={i} scenario={scenario}/>)}
+          {isContentLoading ? (
+              <div className={'placeholder-glow gap-3 d-flex flex-column'}>
+                <span className={'placeholder p-3 col-md-12'}></span>
+                <span className={'placeholder p-3 placeholder-lg col-md-9'}></span>
+                <span className={'placeholder p-3 placeholder-lg col-md-6'}></span>
+              </div>
+            ) :
+            scenarios.map((scenario, i) => <RunScenarioComponent key={i} scenario={scenario}/>)}
         </div>
       </div>
 
@@ -175,7 +187,7 @@ export const RunScenariosPage = () => {
 }
 
 interface RunScenarioProps {
-  scenario: ScenarioRun
+  scenario: ScenarioRun,
 }
 
 const RunScenarioComponent = ({ scenario}: RunScenarioProps) => {
@@ -203,39 +215,43 @@ const RunScenarioComponent = ({ scenario}: RunScenarioProps) => {
 
   return (
     <div className={'d-flex flex-column'}>
-      <div className={`d-flex bg-light justify-content-between align-items-center p-3 border border-1 rounded-3 ${scenario.isCompleted ? 'rounded-bottom-0' : ''}`}>
-        <div className="d-flex align-items-center gap-3">
-          <div>{getStatusIcon()}</div>
-          <div className="d-flex flex-column justify-content-center">
-            <p className="text-dark fw-semibold" style={{ fontSize: 'calc(0.7em + 0.1vw)' }}>
-              {scenario.title}
-            </p>
-            <p className="text-secondary" style={{ fontSize: 'calc(0.6em + 0.1vw)' }}>
-              {scenario.subtitle}
-            </p>
+          <div className={`d-flex bg-light justify-content-between align-items-center p-3 border border-1 rounded-3 ${scenario.isCompleted ? 'rounded-bottom-0' : ''}`}>
+            <div className="d-flex align-items-center gap-3">
+              <div>{getStatusIcon()}</div>
+              <div className="d-flex flex-column justify-content-center">
+                <p className="text-dark fw-semibold" style={{fontSize: 'calc(0.7em + 0.1vw)'}}>
+                  {scenario.title}
+                </p>
+                <p className="text-secondary" style={{fontSize: 'calc(0.6em + 0.1vw)'}}>
+                  {scenario.subtitle}
+                </p>
+              </div>
+            </div>
+            <div className={'d-flex flex-column'}>
+              <p className={'run-scenario-progress text-dark fw-bold text-truncate align-self-end'}
+                 style={{fontSize: 'calc(0.6em + 0.1vw)'}}>{getStatusText()}</p>
+              {!scenario.isRunning && scenario.lastRun && <p className={'run-scenario-progress text-truncate text-secondary'} style={{fontSize: 'calc(0.6em + 0.1vw)'}}>Last run: {scenario.lastRun}</p>}
+            </div>
           </div>
-        </div>
-        <div className={'d-flex flex-column'}>
-          <p className={'run-scenario-progress text-dark fw-bold text-truncate align-self-end'} style={{ fontSize: 'calc(0.6em + 0.1vw)' }}>{getStatusText()}</p>
-          {!scenario.isRunning && scenario.lastRun && <p className={'run-scenario-progress text-truncate text-secondary'}
-              style={{fontSize: 'calc(0.6em + 0.1vw)'}}>Last run: {scenario.lastRun}</p>}
-        </div>
-      </div>
-      {scenario.isCompleted && <div className={'p-3 border border-1 rounded-3 border-top-0 rounded-top-0 d-grid gap-2 text-dark'}>
-        <div className="">
-          <div className="d-flex align-items-center gap-2">
-            <Timer style={{width: '15px'}}/>
-            <p style={{fontSize: 'calc(0.7em + 0.1vw)'}}>Time to execute: {(scenario.runDuration ? scenario.runDuration + 's' : '--')}</p>
-          </div>
-        </div>
+          {
+            scenario.isCompleted &&
+            <div className={'p-3 border border-1 rounded-3 border-top-0 rounded-top-0 d-grid gap-2 text-dark'}>
+                <div className="">
+                    <div className="d-flex align-items-center gap-2">
+                        <Timer style={{width: '15px'}}/>
+                        <p style={{fontSize: 'calc(0.7em + 0.1vw)'}}>Time to
+                            execute: {(scenario.runDuration ? scenario.runDuration + 's' : '--')}</p>
+                    </div>
+                </div>
 
-        <div className="">
-          <div className="d-flex align-items-center gap-2">
-            <ClipboardList style={{width: '15px'}}/>
-            <p style={{fontSize: 'calc(0.7em + 0.1vw)'}}>Total Runs: {scenario.numOfRuns || '--'}</p>
-          </div>
-        </div>
-      </div>}
+                <div className="">
+                    <div className="d-flex align-items-center gap-2">
+                        <ClipboardList style={{width: '15px'}}/>
+                        <p style={{fontSize: 'calc(0.7em + 0.1vw)'}}>Total Runs: {scenario.numOfRuns || '--'}</p>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
   )
 }

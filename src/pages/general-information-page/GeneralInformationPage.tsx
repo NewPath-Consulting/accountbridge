@@ -32,6 +32,7 @@ export const GeneralInformationPage = () => {
     QuickBooksUrl: "", accountId: "", fromEmailAddress: "", organizationName: "", recordName: "", timeZone: "", QuickBooksCountry: "", toEmailAddresses: []
   })
   const [rawEmailInput, setRawEmailInput] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if(Object.keys(onBoardingData.generalInfo).length !== 0) {
@@ -58,6 +59,7 @@ export const GeneralInformationPage = () => {
   const handleSubmission = async () => {
 
     try{
+      setIsSaving(true)
       const errors = await validateForm();
 
       if(errors.length){
@@ -83,6 +85,9 @@ export const GeneralInformationPage = () => {
     }
     catch (e){
       setErrorMsg(e.message || "Unable to complete step")
+    }
+    finally {
+      setIsSaving(false)
     }
   }
 
@@ -176,6 +181,7 @@ export const GeneralInformationPage = () => {
       subTitle={'Please fill in all company information fields'}
       validate={handleSubmission}
       errorMsg={errorMsg}
+      isLoading={isSaving}
     >
       <form>
         <h6>WildApricot Information</h6>

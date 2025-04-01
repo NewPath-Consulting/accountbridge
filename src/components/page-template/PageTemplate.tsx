@@ -7,10 +7,11 @@ interface PageTemplateProps {
   title: string,
   subTitle: string,
   validate: () => void,
-  errorMsg: string | string[]
+  errorMsg: string | string[],
+  isLoading ?: boolean
 }
 
-export const PageTemplate = ({ title, subTitle, validate, children, errorMsg}: PageTemplateProps) => {
+export const PageTemplate = ({ title, subTitle, validate, children, errorMsg, isLoading}: PageTemplateProps) => {
 
   const { getPreviousStep } = useOnBoarding()
   const errorRef = useRef(null)
@@ -54,7 +55,18 @@ export const PageTemplate = ({ title, subTitle, validate, children, errorMsg}: P
       {children}
       <div className="mt-4">
         <button className={"border-black border-2 text-black me-3 bg-transparent c"} type={"submit"} onClick={() => navigate(getPreviousStep() || '/')}>Back</button>
-        <button className={"btn-success"} disabled={false} onClick={validate}>Save & Next</button>
+        <button className={"btn-success"} disabled={false} onClick={validate}>
+          {
+            isLoading ? "Saving" : "Save & Next"
+          }
+          {
+            isLoading &&
+              <div className="spinner-border text-light spinner-border-sm ms-2" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+          }
+
+        </button>
       </div>
     </main>
   )

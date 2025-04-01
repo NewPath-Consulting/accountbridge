@@ -66,6 +66,7 @@ export const PaymentConfigPage = () => {
   const [isGenerateMappingLoading, setIsGenerateMappingLoading] = useState(false)
   const [isTendersLoading, setTendersLoading] = useState(true);
   const [paymentMappingList, dispatch] = useReducer(reducer, onBoardingData.paymentMappingList ?? [{ WATender: '', QBTender: '', QBTenderId: ''}]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const errorRef = useRef(null)
 
@@ -116,6 +117,8 @@ export const PaymentConfigPage = () => {
   const handleSubmission = async () => {
 
     try{
+      setIsSaving(true)
+
       const errors = validateConfig();
 
       if(errors.length > 0){
@@ -136,6 +139,9 @@ export const PaymentConfigPage = () => {
     }
     catch (e){
       setErrorMsg(e.message || "Cannot save payment mappings")
+    }
+    finally {
+      setIsSaving(false);
     }
 
   }
@@ -234,6 +240,7 @@ export const PaymentConfigPage = () => {
       backUrl={'/invoice-config'}
       validate={handleSubmission}
       errorMsg={errorMsg}
+      isLoading={isSaving}
     >
       <BlurryOverlay isLoading={isGenerateMappingLoading} message={isGenerateMappingLoading ? `Currently Mapping your Payment Method Fields. ` : errorMsg ? "Error Occurred!" : "Mapping Completed!"} icon={"stars"} subtitle={"Please wait while our system maps your field names ..."}/>
 
@@ -241,25 +248,28 @@ export const PaymentConfigPage = () => {
         <h6>Default Payment Mapping</h6>
         <p className={'mb-3 mt-2'}>Select a QuickBooks deposit account to record payments received from WildApricot transactions</p>
         <div className="row">
-          <div className={'col-md-6'}>
-            <div className="input-group mb-3">
-              <label className="input-group-text" htmlFor="qb-deposit-account"><i className={'bi bi-receipt'}></i></label>
-              <select
-                className="form-select"
-                id={`qb-deposit-account`}
-                value={qbDepositAccount.accountId}
-                onChange={handleAccountChange}
-              >
-                <option value="">
-                  Choose QB Payment Deposit Account
-                </option>
-                {depositAccountsList.map((option) => (
-                  <option key={option.Id} value={option.Id}>
-                    {option.Name}
+          <div className={'col-md-6 placeholder-glow'}>
+            {isTendersLoading ? <span className={"placeholder p-3 rounded-2 w-100"}></span> :
+              <div className="input-group mb-3">
+                <label className="input-group-text" htmlFor="qb-deposit-account"><i
+                  className={'bi bi-receipt'}></i></label>
+                <select
+                  className="form-select"
+                  id={`qb-deposit-account`}
+                  value={qbDepositAccount.accountId}
+                  onChange={handleAccountChange}
+                >
+                  <option value="">
+                    Choose QB Payment Deposit Account
                   </option>
-                ))}
-              </select>
+                  {depositAccountsList.map((option) => (
+                    <option key={option.Id} value={option.Id}>
+                      {option.Name}
+                    </option>
+                  ))}
+                </select>
             </div>
+            }
           </div>
         </div>
       </div>
@@ -276,7 +286,7 @@ export const PaymentConfigPage = () => {
           </button>
         </div>
 
-        <AlternateMappingTable columns={tableColumns.payment} data={{WildApricotTenders, qbPaymentMethods}} mappingData={paymentMappingList} onMappingChange={handleMapping}/>
+        <AlternateMappingTable columns={tableColumns.payment} data={{WildApricotTenders, qbPaymentMethods}} mappingData={paymentMappingList} onMappingChange={handleMapping} isContentLoading={isTendersLoading}/>
       </div>
     </PageTemplate>
 

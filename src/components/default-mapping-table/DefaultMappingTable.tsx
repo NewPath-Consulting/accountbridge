@@ -5,10 +5,11 @@ export interface DefaultMappingTableProps<T extends InvoiceMapping> {
   QBProducts: any[]; // Data to map (e.g., membership levels)
   onMappingChange : (fields: T) => void; // Callback for selection,
   classesList ?: any[];
-  defaultData: T
+  defaultData: T,
+  isContentLoading: boolean
 }
 
-export const DefaultMappingTable = <T extends InvoiceMapping> ({headers, QBProducts, classesList, onMappingChange, defaultData, children}: DefaultMappingTableProps<T>) => {
+export const DefaultMappingTable = <T extends InvoiceMapping> ({headers, QBProducts, classesList, onMappingChange, defaultData, children, isContentLoading}: DefaultMappingTableProps<T>) => {
 
   const handleProductSelection = (event) => {
     const selectedOption = event.target.options[event.target.selectedIndex];
@@ -50,38 +51,46 @@ export const DefaultMappingTable = <T extends InvoiceMapping> ({headers, QBProdu
         <tbody>
           <tr>
             {children}
-            <td> <select
-              className="form-select"
-              value={defaultData.QBProductId}
-              onChange={(event) => handleProductSelection(event)}
-            >
-              <option value="">
-                Choose QB Product
-              </option>
-              {QBProducts.map((option) => (
-                <option key={option.Id} value={option.Id}>
-                  {option.Name}
-                </option>
-              ))}
-            </select>
+            <td className={"placeholder-glow"}>
+              {!isContentLoading ?
+                <select
+                className="form-select"
+                value={defaultData.QBProductId}
+                onChange={(event) => handleProductSelection(event)}
+                >
+                  <option value="">
+                    Choose QB Product
+                  </option>
+                  {QBProducts.map((option) => (
+                    <option key={option.Id} value={option.Id}>
+                      {option.Name}
+                    </option>
+                  ))}
+                </select> :
+                <span className="placeholder rounded-2 p-3 col-12"></span>
+              }</td>
+            <td className={"placeholder-glow"}>
+              {isContentLoading ? <span className="placeholder rounded-2 p-3 col-12"></span> : <input value={defaultData.IncomeAccount || ""} disabled className={'form-control'}/>}
             </td>
-            <td><input value={defaultData.IncomeAccount || ""} disabled className={'form-control'}/></td>
             {classesList &&
-                <td>
+                <td className={"placeholder-glow"}>
+                  {!isContentLoading ?
                     <select
-                        className="form-select"
-                        value={defaultData.classId || ""}
-                        onChange={handleClassSelection}
+                    className="form-select"
+                    value={defaultData.classId || ""}
+                    onChange={handleClassSelection}
                     >
-                        <option value="" disabled>
-                            Choose Class
-                        </option>
+                      <option value="" disabled>
+                        Choose Class
+                      </option>
                       {classesList.map((option) => (
                         <option key={option.Id} value={option.Id}>
                           {option.Name}
                         </option>
                       ))}
-                    </select>
+                    </select> :
+                    <span className="placeholder rounded-2 p-3 col-12"></span>
+                  }
                 </td>
             }
           </tr>
