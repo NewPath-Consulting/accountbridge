@@ -6,13 +6,15 @@ export interface IAlternateMappingTableProps {
   data: any,
   mappingData: any[],
   onMappingChange: (actionType: string, actionPayload: {}) => void;
+  isContentLoading: boolean;
 }
 
 const AlternateMappingTable = ({
                                 columns,
                                 data,
                                 mappingData,
-                                onMappingChange
+                                onMappingChange,
+                                isContentLoading
                               }: IAlternateMappingTableProps) => {
   const handleFieldChange = (index, columnId, options, event) => {
     const selectedOption = event.target.options[event.target.selectedIndex];
@@ -115,8 +117,9 @@ const AlternateMappingTable = ({
           <tr key={rowIndex}>
             {columns.map((column, colIndex) => (
               <td key={colIndex}>
-                <div className="select-container">
-                  {renderCell(column, row, rowIndex)}
+                <div className="select-container placeholder-glow">
+                  {isContentLoading ? <span className="placeholder rounded-2 p-3 col-12"></span> : renderCell(column, row, rowIndex)}
+
                 </div>
               </td>
             ))}

@@ -4,10 +4,9 @@
     color: #9C9C9C;
 }
 
-.form-content select {
-    background-color: #ffffff;
+h5 + p{
+    color: #9C9C9C;
 }
-
 
 .form-content > *{
     border-bottom: 1px solid var(--border-color);
@@ -28,4 +27,43 @@
 .form-content button:hover{
     background-color: #71DD9310;
     transition: background-color 0.5s ease-out;
+}
+
+.ai-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8em;
+    padding: 7px 15px;
+    font-weight: 400;
+    color: black;
+    background: white;
+    border: none;
+    cursor: pointer;
+    overflow: hidden;
+    z-index: 0;
+    transition: transform 0.2s;
+    /*background: linear-gradient(to bottom, #6837c9, #9d88c9);*/
+    border-radius: 50px;
+    white-space: nowrap;
+}
+
+/* Gradient border */
+.ai-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50px;
+    padding: 3px;
+    background: linear-gradient(to right, #afdaff, #fe7200, #8554d2, #73e9ff);
+    -webkit-mask:
+            linear-gradient(#fff 0 0) content-box,
+            linear-gradient(#fff 0 0);
+    mask:
+            linear-gradient(#fff 0 0) content-box,
+            linear-gradient(#fff 0 0);
+    -webkit-mask-composite: destination-out;
+    mask-composite: exclude;
+    z-index: -1;
 }

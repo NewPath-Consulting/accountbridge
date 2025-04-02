@@ -15,6 +15,8 @@ import {PageTemplate} from "../../components/page-template/PageTemplate.tsx";
 import {updateDataRecord} from "../../services/api/make-api/dataStructuresService.ts";
 import {formatCustomerInfo, formatInvoiceConfig} from "../../utils/formatter.ts";
 import {InvoiceConfiguration} from "../../typings/InvoiceConfiguration.ts";
+import {generateMapping} from "../../services/api/generate-mapping-api/generateMapping.ts";
+import {BlurryOverlay} from "../../components/cloning-animation/BlurryOverlay.tsx";
 export interface InvoiceMapping {
   WAFieldName ?: string,
   QBProduct ?: string,
@@ -39,6 +41,9 @@ export const InvoiceConfigPage = () => {
   const [eventTags, setEventTags] = useState([]);
   const [productTags, setProductTags] = useState(["Delivery"]);
   const [accountReceivable, setAccountReceivable] = useState(onBoardingData.accountReceivable ?? {accountId: "", accountName: ""});
+  const [isGenerateMappingLoading, setIsGenerateMappingLoading] = useState(false)
+  const [isContentLoading, setIsContentLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false);
 
   const [defaultMembershipProduct, setDefaultMembershipProduct] = useState<InvoiceMapping>(onBoardingData.defaultMembershipProduct ?? {QBProduct: "", QBProductId: "", IncomeAccount: "", class: "", classId: ""});
   const [defaultEventProduct, setDefaultEventProduct] = useState<InvoiceMapping>(onBoardingData.defaultEventProduct ?? {QBProduct: "", QBProductId: "", IncomeAccount: "", class: "", classId: ""});
@@ -53,6 +58,7 @@ export const InvoiceConfigPage = () => {
 
     const fetchAllData = async () => {
       try {
+        setIsContentLoading(true)
         // QB data fetching
         await Promise.all([
           fetchData("select * from item", setProducts, "Item", setErrorMsg, onBoardingData.generalInfo.QuickBooksUrl),
@@ -92,6 +98,9 @@ export const InvoiceConfigPage = () => {
       } catch (error) {
         console.error("Error fetching data:", error);
         setErrorMsg(error?.message || "Failed to fetch data");
+      }
+      finally {
+        setIsContentLoading(false)
       }
     };
 
@@ -172,8 +181,8 @@ export const InvoiceConfigPage = () => {
       manualInvoiceMapping
     });
 
-    console.log(defaultMembershipProduct)
-    console.log(onBoardingData)
+    console.log(`WA_Membership_Levels: ${membershipLevels.join(', ')}  
+                  QB_Products: ${JSON.stringify(products.map(product => ({Name: product.Name, Id: product.Id})))}`)
 
   }, [
     membershipLevelMappingList,
@@ -233,7 +242,7 @@ export const InvoiceConfigPage = () => {
       { name: "Online Store Mapping", list: onlineStoreMappingList, options: productTags }
     ];
 
-    alternateMappings.forEach(({ name, list, options }) => {
+    alternateMappings.forEach(({ name, list, _ }) => {
       list.forEach((row, index) => {
         if (!row.WAFieldName || !row.QBProductId || !row.QBProduct || (hasClasses && !row.class)) {
           errors.push(`Row ${index + 1} in ${name} is incomplete.`);
@@ -250,6 +259,8 @@ export const InvoiceConfigPage = () => {
 
   const handleSubmission = async () => {
     try{
+      setIsSaving(true);
+
       const errors = validateConfig();
 
       if (errors.length > 0) {
@@ -282,6 +293,9 @@ export const InvoiceConfigPage = () => {
     catch (e){
       setErrorMsg(e.message || "Cannot save data")
     }
+    finally {
+      setIsSaving(false)
+    }
 
   }
 
@@ -298,6 +312,43 @@ export const InvoiceConfigPage = () => {
         break;
       default:
         throw new Error("No field name found")
+    }
+  }
+
+  const handleGenerateMapping = async (obj: {name: string, WAFields: any[]}) => {
+    try{
+      setErrorMsg('')
+      setIsGenerateMappingLoading(true)
+
+      const waFields = `WA_${obj.name}: ${obj.WAFields.join(', ')}`;
+      const qbMethods = `QB_Products: ${JSON.stringify(products.map(product => ({Name: product.Name, Id: product.Id})))}`;
+
+      const prompt = `
+        ${waFields} \n
+        ${qbMethods}
+        `;
+
+      const instructions = `
+        You are a mapping assistant.  When given: \\n- A comma-separated string of Wild Apricot (WA) ${obj.name}s. \\n - An array of QuickBooks (QB) products with \`Name\` and \`ID\` attributes.  
+        
+        Your task:  
+        - Map each WA ${obj.name} to the **closest matching QB product** by context or similarity and keep the corresponding \`ID\`.  
+        - Return the result as an array of objects in the format:  \`\`\`json [{ WAFieldName: WA_level, QBProduct: QB_name, QBProductId: QB_ID }]. 
+        - Ensure **all WA membership levels** are mapped to a QB product—**no null or missing values**. 
+        `;
+
+      const response = await generateMapping(prompt, instructions);
+
+      const { message } = response.data
+
+      handleMapping("SET_MAPPING", {mapping: message, products}, obj.name)
+
+    }
+    catch (e){
+      setErrorMsg(e.response.data.message || "Error mapping with AI")
+    }
+    finally {
+      setIsGenerateMappingLoading(false)
     }
   }
 
@@ -339,20 +390,26 @@ export const InvoiceConfigPage = () => {
       backUrl={'/customer-information'}
       validate={handleSubmission}
       errorMsg={errorMsg}
+      isLoading={isSaving}
     >
-        <div id={'content'}>
-          <div className={'accounts-receivable mb-5'} >
+      <BlurryOverlay isLoading={isGenerateMappingLoading} message={isGenerateMappingLoading ? `Currently Mapping your Invoice Fields. ` : errorMsg ? "Error Occurred!" : "Mapping Completed!"} icon={"stars"} subtitle={"Please wait while our system maps your field names ..."}/>
+      <div id={'content'}>
+          <div className={'accounts-receivable mb-5 placeholder-glow'} >
             <h6>QuickBooks Receivable Account for Invoices</h6>
             <p className={'mb-3 mt-2'}>Please select your Accounts Receivable account name below</p>
-            <div className="input-group mb-3" style={{maxWidth: '500px'}}>
-              <label className="input-group-text" htmlFor="inputAccountsReceivable"><i className={'bi bi-receipt'}></i></label>
-              <select className="form-select" id="inputAccountsReceivable" value={accountReceivable.accountId} onChange={handleAccountSelection}>
-                <option value={""}>Choose Receivable Account</option>
-                {accountList.map(account => {
-                  return <option key={account.Id} value={account.Id}>{account.Name}</option>
-                })}
-              </select>
-            </div>
+            {!isContentLoading ?
+              <div className="input-group mb-3" style={{maxWidth: '500px'}}>
+                <label className="input-group-text" htmlFor="inputAccountsReceivable"><i className={'bi bi-receipt'}></i></label>
+                <select className="form-select" id="inputAccountsReceivable" value={accountReceivable.accountId}
+                        onChange={handleAccountSelection}>
+                  <option value={""}>Choose Receivable Account</option>
+                  {accountList.map(account => {
+                    return <option key={account.Id} value={account.Id}>{account.Name}</option>
+                  })}
+                </select>
+              </div> :
+              <span className="placeholder p-3 rounded-2 col-12" style={{maxWidth: '500px'}}></span>
+            }
           </div>
           <div className={'quickbooks-class mb-5'} >
             <h6>QuickBooks Classes</h6>
@@ -369,44 +426,68 @@ export const InvoiceConfigPage = () => {
           <div className={'default product'} >
             <div className={'membership-level-table'}>
               <h6>Default Membership Level Mapping</h6>
-              <p className={'mb-3 mt-2'}>Map your WildApricot membership levels to one of your products by selecting a QuickBooks product from the drop down</p>
-              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]}  defaultData={defaultMembershipProduct} QBProducts={products} onMappingChange={(payload) => handleDefaultMapping(payload, "membership")}/>
+              <p className={'mb-3 mt-2'}>Map your Wild Apricot membership levels to a QuickBooks product by selecting from the dropdown. This will be used as the default if no alternate mapping is set.</p>
+              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]}  defaultData={defaultMembershipProduct} QBProducts={products}  onMappingChange={(payload) => handleDefaultMapping(payload, "membership")} isContentLoading={isContentLoading}/>
             </div>
           </div>
           <div className={'membership-level-table mb-4'}>
-            <h6>Alternate Membership Level Mapping</h6>
-            <p className={'mb-3 mt-2'}>Map your WildApricot membership levels to one of your products by selecting a QuickBooks product from the drop down</p>
-            <AlternateMappingTable columns={[...tableColumns.membershipLevels, ...(hasClasses ? tableColumns.classes : [])]} onMappingChange={(actionType, actionPayload) => handleMapping(actionType, actionPayload, "membership")} mappingData={membershipLevelMappingList} data={{products, membershipLevels, classes}}/>
+            <div className={'d-flex justify-content-between align-items-center flex-wrap'}>
+              <div>
+                <h6>Alternate Membership Level Mapping</h6>
+                <p className={'mb-3 mt-2'}>Map specific Wild Apricot membership levels to different QuickBooks products by adding as many mappings as needed. If a level isn’t mapped here, the default will be used.</p>
+              </div>
+              <button className={"ai-btn mb-3"} onClick={() => handleGenerateMapping({ name: 'membership', WAFields: membershipLevels})}>
+                <i className={'bi bi-stars'} style={{color: 'black'}}></i>
+                Map with AI
+              </button>
+            </div>
+            <AlternateMappingTable columns={[...tableColumns.membershipLevels, ...(hasClasses ? tableColumns.classes : [])]} onMappingChange={(actionType, actionPayload) => handleMapping(actionType, actionPayload, "membership")} mappingData={membershipLevelMappingList} data={{products, membershipLevels, classes}} isContentLoading={isContentLoading}/>
           </div>
           <div className={'default product'} >
             <div className={'event-registration-table'}>
               <h6>Default Event Registration Mapping</h6>
-              <p className={'mb-3 mt-2'}>Map your WildApricot membership levels to one of your products by selecting a QuickBooks product from the drop down</p>
-              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]} QBProducts={products} defaultData={defaultEventProduct} onMappingChange={(payload) => handleDefaultMapping(payload, "event")}/>
+              <p className={'mb-3 mt-2'}>Map your Wild Apricot event registrations to a QuickBooks product by selecting from the dropdown. This will be used as the default if no alternate mapping is set.</p>
+              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]} QBProducts={products} defaultData={defaultEventProduct} onMappingChange={(payload) => handleDefaultMapping(payload, "event")} isContentLoading={isContentLoading}/>
             </div>
           </div>
           <div className={'event-registration-table mb-4'}>
-            <h6>Alternate Event Registration Mapping</h6>
-            <p className={'mb-3 mt-2'}>Map your WildApricot events to one of your products by selecting a QuickBooks product from the drop down</p>
-            <AlternateMappingTable columns={[...tableColumns.events, ...(hasClasses ? tableColumns.classes : [])]} onMappingChange={(actionType, actionPayload) => handleMapping(actionType, actionPayload, "event")} mappingData={eventMappingList} data={{products, eventTags, classes}}/>
+            <div className={'d-flex justify-content-between align-items-center flex-wrap'}>
+              <div>
+                <h6>Alternate Event Registration Mapping</h6>
+                <p className={'mb-3 mt-2'}>Map specific Wild Apricot event registrations to different QuickBooks products by adding as many mappings as needed. If a registration isn’t mapped here, the default will be used.</p>
+              </div>
+              <button className={"ai-btn mb-3"} onClick={() => handleGenerateMapping({ name: 'event', WAFields: eventTags})}>
+                <i className={'bi bi-stars'} style={{color: 'black'}}></i>
+                Map with AI
+              </button>
+            </div>
+            <AlternateMappingTable columns={[...tableColumns.events, ...(hasClasses ? tableColumns.classes : [])]} onMappingChange={(actionType, actionPayload) => handleMapping(actionType, actionPayload, "event")} mappingData={eventMappingList} data={{products, eventTags, classes}} isContentLoading={isContentLoading}/>
           </div>
           <div className={'default product'} >
             <div className={'online-store-table'}>
               <h6>Default Online Store Mapping</h6>
-              <p className={'mb-3 mt-2'}>Map your WildApricot product tags to one of your QuickBooks products by selecting a QuickBooks product from the drop down</p>
-              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]} defaultData={defaultStoreProduct} QBProducts={products} onMappingChange={(payload) => handleDefaultMapping(payload, "store")}/>
+              <p className={'mb-3 mt-2'}>Map your Wild Apricot online store purchases to a QuickBooks product by selecting from the dropdown. This will be used as the default if no alternate mapping is set.</p>
+              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]} defaultData={defaultStoreProduct} QBProducts={products} onMappingChange={(payload) => handleDefaultMapping(payload, "store")} isContentLoading={isContentLoading}/>
             </div>
           </div>
           <div className={'online-store-table'}>
-            <h6>Alternate Online Store Mapping</h6>
-            <p className={'mb-3 mt-2'}>Map your WildApricot online stores to one of your products by selecting a QuickBooks product from the drop down</p>
-            <AlternateMappingTable columns={[...tableColumns.onlineStore, ...(hasClasses ? tableColumns.classes : [])]} onMappingChange={(actionType, actionPayload) => handleMapping(actionType, actionPayload, "store")} mappingData={onlineStoreMappingList} data={{products, productTags, classes}}/>
+            <div className={'d-flex justify-content-between align-items-center flex-wrap'}>
+              <div>
+                <h6>Alternate Online Store Mapping</h6>
+                <p className={'mb-3 mt-2'}>Map your WildApricot online stores to one of your products by selecting a QuickBooks product from the drop down</p>
+              </div>
+              <button className={"ai-btn mb-3"} onClick={() => handleGenerateMapping({ name: 'store', WAFields: productTags})}>
+                <i className={'bi bi-stars'} style={{color: 'black'}}></i>
+                Map with AI
+              </button>
+            </div>
+           <AlternateMappingTable columns={[...tableColumns.onlineStore, ...(hasClasses ? tableColumns.classes : [])]} onMappingChange={(actionType, actionPayload) => handleMapping(actionType, actionPayload, "store")} mappingData={onlineStoreMappingList} data={{products, productTags, classes}} isContentLoading={isContentLoading}/>
           </div>
           <div className={'default product'} >
             <div className={'manual-invoice-table'}>
               <h6>Manual Invoice Mapping</h6>
               <p className={'mb-3 mt-2'}>This section is used to map your manually created invoices to a QuickBooks product.</p>
-              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]} defaultData={manualInvoiceMapping} QBProducts={products} onMappingChange={(payload) => handleDefaultMapping(payload, "manual")}/>
+              <DefaultMappingTable<InvoiceMapping> classesList={hasClasses ? classes : undefined} headers={["QB Product", "Income Account", ...(hasClasses ? ["Class"] : [])]} defaultData={manualInvoiceMapping} QBProducts={products} onMappingChange={(payload) => handleDefaultMapping(payload, "manual")} isContentLoading={isContentLoading}/>
             </div>
           </div>
         </div>

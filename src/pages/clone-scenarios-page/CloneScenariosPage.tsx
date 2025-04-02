@@ -128,7 +128,7 @@ export const CloneScenariosPage = () => {
       validate={handleSubmission}
       errorMsg={errorMsg}
     >
-      <BlurryOverlay isLoading={isLoading} message={errorMsg ? "Error Occurred!" : successMsg ? successMsg : "Cloning your Workflows"}/>
+      <BlurryOverlay isLoading={isLoading} message={errorMsg ? "Error Occurred!" : successMsg ? successMsg : "Cloning your Workflows"} icon={'copy'} subtitle={'Setting up your workflows and preparing ...'}/>
       {successMsg && <div style={{fontSize:'13px'}} className="alert alert-success" role="alert">
           <i style={{color: "#245815"}} className={'bi bi-check-circle'}></i> {successMsg}
       </div>}

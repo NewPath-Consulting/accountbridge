@@ -1,13 +1,11 @@
 import axios from "axios"
 import {refreshQuickbooksAccessToken} from "./api/quickbooks-api/authService.ts";
-import quickbooksClient from "./quickbooksClient.ts";
 
 export class AuthService {
   private static dynamicToken: string | null = null;
   private static qbAccessToken: string | null = null;
   private static qbRealmId: string | null = null;
   private static baseUrl: string | null = null;
-
 
   static setQuickbooksAuth(accessToken: string, realmId: string) {
     this.qbAccessToken = accessToken;
@@ -21,10 +19,9 @@ export class AuthService {
   }
 }
 
-
 const httpClient = axios.create({
   baseURL: "http://localhost:3000",
-  timeout: 10000,
+  timeout: 50000,
   headers: {
     "Content-Type": "application/json",
   }

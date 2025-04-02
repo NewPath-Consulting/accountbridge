@@ -1,3 +1,8 @@
+function getIncomeAccount(QBProducts, QBProductId) {
+  const IncomeAccount = QBProducts.find(option => option.Id == QBProductId)?.IncomeAccountRef?.name
+
+  return QBProductId
+}
 
 export const invoiceTableReducer = (state, action) => {
   switch (action.type) {
@@ -27,6 +32,20 @@ export const invoiceTableReducer = (state, action) => {
           ? { ...row, ["classId"]: action.payload.value,  ["class"]: action.payload.name} // Update specific field
           : row
       );
+    case "SET_MAPPING":
+      if (!Array.isArray(action.payload.mapping)) {
+        console.error("SET_MAPPING payload is not an array:", action);
+        return state;
+      }
+
+      return action.payload.mapping.map(item => ({
+        WAFieldName: item.WAFieldName || '',           // Map WA field
+        QBProduct: item.QBProduct || '',           // Map QB product name
+        QBProductId: item.QBProductId || '',       // Map QB product ID
+        IncomeAccount:  action.payload.products.find(option => option.Id == item.QBProductId)?.IncomeAccountRef?.name,
+        class: '',                                 // Empty class field
+        classId: ''                                // Empty class ID
+      }));
     default:
       return state;
   }

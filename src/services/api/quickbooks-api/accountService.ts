@@ -7,6 +7,6 @@ export const getQueriedResults = (query: string, url: string) => {
   return httpClient.get(endpoints.quickbooksApi.getAccounts, {params: {query, url}})
 }
 
-export const configureQuickBooksUrl = (apiUrl: string) => {
-  return httpClient.post(endpoints.quickbooksApi.configureUrl, {apiUrl})
+export const configureQuickBooksUrl = () => {
+  return httpClient.post(endpoints.quickbooksApi.configureUrl)
 }

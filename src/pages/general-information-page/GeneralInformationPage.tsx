@@ -32,6 +32,7 @@ export const GeneralInformationPage = () => {
     QuickBooksUrl: "", accountId: "", fromEmailAddress: "", organizationName: "", recordName: "", timeZone: "", QuickBooksCountry: "", toEmailAddresses: []
   })
   const [rawEmailInput, setRawEmailInput] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if(Object.keys(onBoardingData.generalInfo).length !== 0) {
@@ -58,6 +59,7 @@ export const GeneralInformationPage = () => {
   const handleSubmission = async () => {
 
     try{
+      setIsSaving(true)
       const errors = await validateForm();
 
       if(errors.length){
@@ -84,6 +86,9 @@ export const GeneralInformationPage = () => {
     catch (e){
       setErrorMsg(e.message || "Unable to complete step")
     }
+    finally {
+      setIsSaving(false)
+    }
   }
 
   useEffect(() => {
@@ -92,7 +97,7 @@ export const GeneralInformationPage = () => {
 
   const validateQuickBooksUrl = async() => {
     try{
-      const response = await configureQuickBooksUrl(formData.QuickBooksUrl);
+      const response = await configureQuickBooksUrl();
       console.log(response.data)
       return true
     }
@@ -176,6 +181,7 @@ export const GeneralInformationPage = () => {
       subTitle={'Please fill in all company information fields'}
       validate={handleSubmission}
       errorMsg={errorMsg}
+      isLoading={isSaving}
     >
       <form>
         <h6>WildApricot Information</h6>
@@ -241,8 +247,11 @@ export const GeneralInformationPage = () => {
               <p>This is your app url for QuickBooks Online only. </p>
             </div>
             <div className="col-md-7">
-              <input
-                value={formData.QuickBooksUrl} name={'QuickBooksUrl'} onChange={handleFormData} type={"text"} id={'qb-url'} className={'form-control form-control-sm'} placeholder={'http://app.company.qbo.intuit.com'}/>
+              <select className={'form-select form-select-sm'} value={formData.QuickBooksUrl} onChange={handleFormData} name={'QuickBooksUrl'} id={'qb-url'}>
+                <option value={""}>Production or Sandbox URL</option>
+                <option value={"https://quickbooks.api.intuit.com"}>Production</option>
+                <option value={"https://sandbox-quickbooks.api.intuit.com"}>Sandbox</option>
+              </select>
             </div>
           </div>
         </div>
