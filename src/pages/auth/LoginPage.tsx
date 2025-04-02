@@ -126,7 +126,8 @@ export const LoginPage = () => {
 
         {/* Right section with light green background */}
         <div className="col-md-6 auth-img pt-4 pb-4 pe-4">
-          <div className={'w-100 h-100 rounded-4'}>
+          <div className={'w-100 h-100 rounded-4 d-flex justify-content-center align-items-center'}>
+            <img src={'auth-img.png'} alt={'auth image'} style={{ width: '300px', height: 'auto' }}/>
           </div>
         </div>
       </div>

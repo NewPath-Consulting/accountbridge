@@ -89,7 +89,7 @@ const accountBridgeConnectionsList: IConnection[] = [
 ]
 
 export const CreateConnectionsPage = () => {
-  const {updateData, markStepAsCompleted, getNextStep, getPreviousStep, onBoardingData} = useOnBoarding();
+  const {markStepAsCompleted, getNextStep, onBoardingData} = useOnBoarding();
   const [errorMsg, setErrorMsg] = useState("");
   const [isConnectedMap, setIsConnectedMap] = useState(() => {
     return new Map(
@@ -268,9 +268,7 @@ export const CreateConnectionsPage = () => {
         setErrorMsg("Failed to fetch connections: " + error.response?.data?.error || "Ask for help")
       }
       finally {
-        setTimeout(() => {
-          setIsContentLoading(false);
-        }, 500)
+        setIsContentLoading(false);
       }
     };
 
@@ -295,11 +293,11 @@ export const CreateConnectionsPage = () => {
       <div>
         <h6 className={'mb-3 ms-2 fw-light'}>Connect To Make</h6>
         <div className={'row mb-5 g-4'}>
-          {connectionsList.map((connection, index) => <ConnectionComponent key={index} isLoading={isLoadingMap.get(connection.accountType) || false} createConnection={handleConnection} isConnected={isConnectedMap.get(connection.accountType) || false} connection={connection}/>)}
+          {connectionsList.map((connection, index) => <ConnectionComponent key={index} isLoading={isLoadingMap.get(connection.accountType) || false} createConnection={handleConnection} isConnected={isConnectedMap.get(connection.accountType) || false} connection={connection} isContentLoading={isContentLoading}/>)}
         </div>
         <h6 className={'mb-3 ms-2 fw-light'}>Connect To AccountBridge</h6>
         <div className={'row mb-3 g-4'}>
-          {accountBridgeConnectionsList.map((connection, index) => <ConnectionComponent key={index} isLoading={isLoadingMap.get(connection.accountType) || false} createConnection={createConnectionToAccountBridge} isConnected={isAppConnectedToAccountBridgeMap.get(connection.accountType) || false} connection={connection}/>)}
+          {accountBridgeConnectionsList.map((connection, index) => <ConnectionComponent key={index} isLoading={isLoadingMap.get(connection.accountType) || false} createConnection={createConnectionToAccountBridge} isConnected={isAppConnectedToAccountBridgeMap.get(connection.accountType) || false} connection={connection} isContentLoading={isContentLoading}/>)}
         </div>
       </div>
     </PageTemplate>
